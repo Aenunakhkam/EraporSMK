@@ -35,7 +35,7 @@ XML PHP Extension
 - Clone Repositori ini
 
 ```bash
-git clone https://github.com/eraporsmk/erapor8.git dataweb
+git clone https://github.com/Aenunakhkam/EraporSMK.git dataweb
 cd dataweb
 ```
 
@@ -82,6 +82,21 @@ php artisan migrate
 php artisan db:seed
 ```
 
+## Build Frontend
+
+```bash
+npm install
+npm run build
+```
+
+## Menjalankan Aplikasi
+
+```bash
+php artisan serve --port=8154
+```
+
+Buka browser dan akses: **http://localhost:8154**
+
 ## Panduan Aplikasi
 
 - Panduan instal aplikasi. Silahkan download [disini](https://drive.google.com/file/d/16Y8zR9aGE5B7pJUqMh9f15t0dmglom53/view?usp=sharing)
@@ -101,7 +116,7 @@ php artisan db:seed
 - Clone Repositori ini
 
 ```bash
-git clone https://github.com/eraporsmk/erapor8.git dataweb
+git clone https://github.com/Aenunakhkam/EraporSMK.git dataweb
 cd dataweb
 ```
 
@@ -130,8 +145,16 @@ composer install
 
 ## Update Versi Aplikasi
 
+Jika sudah pernah menginstall dan ada update terbaru, jalankan perintah berikut:
+
 ```bash
-php artisan app:update
+git pull origin main
+composer install
+npm install
+npm run build
+php artisan migrate
+php artisan config:clear
+php artisan cache:clear
 ```
 
 ## Edit file .env untuk menampilkan foto profile
@@ -200,7 +223,7 @@ Catatan: Tidak perlu merubah apapun, copy paste sesuai yang tertera di deskripsi
 
 ## Contributing
 
-1. Fork it (<https://github.com/eraporsmk/erapor8/fork>)
+1. Fork it (<https://github.com/Aenunakhkam/EraporSMK/fork>)
 2. Create your feature branch (`git checkout -b feature/fooBar`)
 3. Commit your changes (`git commit -am 'Add some fooBar'`)
 4. Push to the branch (`git push origin feature/fooBar`)
