@@ -395,7 +395,7 @@ function get_current_git_commit( $branch='main' ) {
   }
 }
 function getLastCommit(){
-    $url = 'https://api.github.com/repos/eraporsmk/erapor8';
+    $url = 'https://api.github.com/repos/Aenunakhkam/EraporSMK';
     try {
         $response = Http::withOptions([
             'verify' => false,
@@ -408,7 +408,7 @@ function getLastCommit(){
     return $pushed_at;
 }
 function getCurrentHead(){
-    $url = 'https://api.github.com/repos/eraporsmk/erapor8/commits/'.get_current_git_commit();
+    $url = 'https://api.github.com/repos/Aenunakhkam/EraporSMK/commits/'.get_current_git_commit();
     try {
         $response = Http::withOptions([
             'verify' => false,
