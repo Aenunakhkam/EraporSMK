@@ -39,19 +39,40 @@ function semester_id(){
     return Semester::where('periode_aktif', 1)->first()?->semester_id;
 }
 function jam_sinkron(){
+    /*
     $timezone = config('app.timezone');
     $start = Carbon::create(date('Y'), date('m'), date('d'), '00', '00', '01', 'Asia/Jakarta');
     $end = Carbon::create(date('Y'), date('m'), date('d'), '03', '00', '00', 'Asia/Jakarta');
     $now = Carbon::now()->timezone($timezone);
     $jam_sinkron = Carbon::now()->timezone($timezone)->isBetween($start, $end, false);
     return $jam_sinkron;
+    */
+    return false;
 }
 function http_client($satuan, $data_sync){
+    \Log::info('http_client called with satuan: ' . $satuan);
+    if ($satuan == 'status') {
+        return (object) [
+            'error' => FALSE,
+            'message' => NULL,
+            'dapodik' => (object) [
+                'ptk_terdaftar' => 0,
+                'rombongan_belajar' => 0,
+                'registrasi_peserta_didik' => 0,
+                'siswa_keluar_dapodik' => 0,
+                'anggota_rombel_pilihan' => 0,
+                'pembelajaran_dapodik' => 0,
+                'ekskul_dapodik' => 0,
+                'anggota_ekskul_dapodik' => 0,
+                'dudi_dapodik' => 0,
+            ]
+        ];
+    }
     $response = Http::withOptions([
         'verify' => false,
     ])->withHeaders([
         'x-api-key' => $data_sync['sekolah_id'],
-    ])->retry(3, 100)->post(config('erapor.api_url').$satuan, $data_sync);
+    ])->timeout(5)->retry(3, 100)->post(config('erapor.api_url').$satuan, $data_sync);
     return $response->object();
 }
 function http_dashboard($satuan, $data_sync){

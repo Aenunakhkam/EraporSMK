@@ -31,6 +31,7 @@ use App\Models\NilaiTp;
 use App\Models\TpNilai;
 use App\Models\TpPkl;
 use App\Imports\TemplateTp;
+use App\Models\Agama;
 use Storage;
 
 class ReferensiController extends Controller
@@ -45,6 +46,28 @@ class ReferensiController extends Controller
             $query->orWhere('mata_pelajaran_id', 'ILIKE', '%' . request()->q . '%');
         })->paginate(request()->per_page);
         return response()->json(['status' => 'success', 'data' => $data]);
+    }
+    public function simpan_mapel(){
+        request()->validate(
+            [
+                'mata_pelajaran_id' => 'required|string|unique:pgsql.ref.mata_pelajaran,mata_pelajaran_id',
+                'nama' => 'required|string|max:255',
+            ],
+            [
+                'mata_pelajaran_id.required' => 'ID Mata Pelajaran wajib diisi.',
+                'mata_pelajaran_id.unique' => 'ID Mata Pelajaran sudah digunakan.',
+                'nama.required' => 'Nama Mata Pelajaran wajib diisi.',
+            ]
+        );
+        MataPelajaran::create([
+            'mata_pelajaran_id' => request()->mata_pelajaran_id,
+            'nama' => request()->nama,
+        ]);
+        return response()->json([
+            'color' => 'success',
+            'title' => 'Berhasil!',
+            'text' => 'Mata Pelajaran '.request()->nama.' berhasil ditambahkan.',
+        ]);
     }
     public function ekstrakurikuler(){
         $data = Ekstrakurikuler::where(function($query){
@@ -959,6 +982,9 @@ class ReferensiController extends Controller
                 }
                 $query->whereHas('pembelajaran', $this->kondisiPembelajaran());
             });
+            $query->orWhereHas('tp_mapel', function($query){
+                $query->where($this->kondisiPembelajaran());
+            });
         };
         return $callback;
     }
@@ -1061,33 +1087,78 @@ class ReferensiController extends Controller
                 ];
             }
         } elseif(request()->aksi == 'add'){
-            request()->validate(
-                [
-                    'tingkat' => 'required',
-                    'rombongan_belajar_id' => 'required',
-                    'mata_pelajaran_id' => 'required',
-                    //'cp_id' => 'required',
-                    'template_excel' => 'required|mimes:xlsx',
-                ],
-                [
-                    'tingkat.required' => 'Tingkat Kelas tidak boleh kosong!!',
-                    'rombongan_belajar_id.required' => 'Rombongan Belajar tidak boleh kosong!!',
-                    'mata_pelajaran_id.required' => 'Mata Pelajaran tidak boleh kosong!!',
-                    //'cp_id.required' => 'CP tidak boleh kosong!!',
-                    'template_excel.required' => 'Template TP tidak boleh kosong!!',
-                    'template_excel.mimes' => 'Template TP harus berupa file dengan ekstensi: xlsx.',
-                ]
-            );
-            $file_path = request()->template_excel->store('files', 'public');
-            $id = (request()->cp_id) ?? request()->kompetensi_dasar_id;
-            Excel::import(new TemplateTp(request()->pembelajaran_id, request()->mata_pelajaran_id, $id), storage_path('/app/public/'.$file_path));
-            Storage::disk('public')->delete($file_path);
-            $data = [
-                'icon' => 'success',
-                'title' => 'Berhasil!',
-                'text' => 'Data Tujuan Pembelajaran (TP) berhasil disimpan!',
-                'file_path' => $file_path,
-            ];
+            if(request()->has('deskripsi') && request()->deskripsi){
+                request()->validate(
+                    [
+                        'tingkat' => 'required',
+                        'rombongan_belajar_id' => 'required',
+                        'mata_pelajaran_id' => 'required',
+                        'deskripsi' => 'required|string',
+                    ],
+                    [
+                        'tingkat.required' => 'Tingkat Kelas tidak boleh kosong!!',
+                        'rombongan_belajar_id.required' => 'Rombongan Belajar tidak boleh kosong!!',
+                        'mata_pelajaran_id.required' => 'Mata Pelajaran tidak boleh kosong!!',
+                        'deskripsi.required' => 'Deskripsi Tujuan Pembelajaran tidak boleh kosong!!',
+                    ]
+                );
+                
+                $id = (request()->cp_id) ?? request()->kompetensi_dasar_id;
+                
+                $new_tp = TujuanPembelajaran::updateOrCreate(
+                    [
+                        'kd_id' => ($id && Str::isUuid($id)) ? $id : NULL,
+                        'cp_id' => ($id && !Str::isUuid($id)) ? $id : NULL,
+                        'deskripsi' => request()->deskripsi,
+                    ],
+                    [
+                        'last_sync' => now(),
+                    ]
+                );
+                
+                if($new_tp){
+                    TpMapel::updateOrCreate([
+                        'tp_id' => $new_tp->tp_id,
+                        'pembelajaran_id' => request()->pembelajaran_id,
+                    ]);
+                }
+                
+                $data = [
+                    'color' => 'success',
+                    'icon' => 'success',
+                    'title' => 'Berhasil!',
+                    'text' => 'Data Tujuan Pembelajaran (TP) berhasil disimpan!',
+                ];
+            } else {
+                request()->validate(
+                    [
+                        'tingkat' => 'required',
+                        'rombongan_belajar_id' => 'required',
+                        'mata_pelajaran_id' => 'required',
+                        //'cp_id' => 'required',
+                        'template_excel' => 'required|mimes:xlsx',
+                    ],
+                    [
+                        'tingkat.required' => 'Tingkat Kelas tidak boleh kosong!!',
+                        'rombongan_belajar_id.required' => 'Rombongan Belajar tidak boleh kosong!!',
+                        'mata_pelajaran_id.required' => 'Mata Pelajaran tidak boleh kosong!!',
+                        //'cp_id.required' => 'CP tidak boleh kosong!!',
+                        'template_excel.required' => 'Template TP tidak boleh kosong!!',
+                        'template_excel.mimes' => 'Template TP harus berupa file dengan ekstensi: xlsx.',
+                    ]
+                );
+                $file_path = request()->template_excel->store('files', 'public');
+                $id = (request()->cp_id) ?? request()->kompetensi_dasar_id;
+                Excel::import(new TemplateTp(request()->pembelajaran_id, request()->mata_pelajaran_id, $id), storage_path('/app/public/'.$file_path));
+                Storage::disk('public')->delete($file_path);
+                $data = [
+                    'color' => 'success',
+                    'icon' => 'success',
+                    'title' => 'Berhasil!',
+                    'text' => 'Data Tujuan Pembelajaran (TP) berhasil disimpan!',
+                    'file_path' => $file_path,
+                ];
+            }
         } else {
             request()->validate(
                 [
@@ -1288,5 +1359,196 @@ class ReferensiController extends Controller
             'tp_pkl' => TpPkl::where('tp_id', request()->tp_id)->count(),
         ];
         return response()->json($data);
+    }
+    public function agama(){
+        $data = Agama::orderBy('agama_id')->get();
+        return response()->json($data);
+    }
+    public function referensi_ekskul(){
+        $guru = Ptk::select('guru_id', 'nama', 'gelar_depan', 'gelar_belakang')
+            ->where('sekolah_id', request()->sekolah_id)
+            ->whereDoesntHave('ptk_keluar', function($query){
+                $query->where('semester_id', request()->semester_id);
+            })
+            ->orderBy('nama')
+            ->get();
+        return response()->json([
+            'guru' => $guru,
+        ]);
+    }
+    public function simpan_ekskul(){
+        request()->validate(
+            [
+                'nama_ekskul' => 'required|string|max:255',
+                'guru_id' => 'required',
+            ],
+            [
+                'nama_ekskul.required' => 'Nama Ekstrakurikuler wajib diisi.',
+                'guru_id.required' => 'Pembina Ekstrakurikuler wajib dipilih.',
+            ]
+        );
+
+        $uuid = Str::uuid();
+
+        // 1. Create rombongan belajar
+        $rombel = RombonganBelajar::create([
+            'rombongan_belajar_id' => $uuid,
+            'sekolah_id' => request()->sekolah_id,
+            'semester_id' => request()->semester_id,
+            'nama' => request()->nama_ekskul,
+            'guru_id' => request()->guru_id,
+            'ptk_id' => request()->guru_id,
+            'tingkat' => 0,
+            'jenis_rombel' => 51, // ekskul
+            'kurikulum_id' => 99, // default
+            'kunci_nilai' => 0,
+            'rombel_id_dapodik' => $uuid,
+            'last_sync' => now(),
+        ]);
+
+        // 2. Create ekstrakurikuler
+        $ekskul = Ekstrakurikuler::create([
+            'ekstrakurikuler_id' => $uuid,
+            'sekolah_id' => request()->sekolah_id,
+            'semester_id' => request()->semester_id,
+            'guru_id' => request()->guru_id,
+            'nama_ekskul' => request()->nama_ekskul,
+            'alamat_ekskul' => request()->alamat_ekskul ?: '-',
+            'is_dapodik' => 0,
+            'rombongan_belajar_id' => $uuid,
+            'id_kelas_ekskul' => $uuid,
+            'last_sync' => now(),
+        ]);
+
+        // Sync role pembina_ekskul
+        $semester = \App\Models\Semester::find(request()->semester_id);
+        if ($semester) {
+            $team = \App\Models\Team::updateOrCreate([
+                'name' => $semester->nama,
+                'display_name' => $semester->nama,
+                'description' => $semester->nama,
+            ]);
+            $user = \App\Models\User::where('guru_id', request()->guru_id)->first();
+            if ($user) {
+                $pembinaRole = \App\Models\Role::where('name', 'pembina_ekskul')->first();
+                if ($pembinaRole && !$user->hasRole($pembinaRole, $semester->nama)) {
+                    $user->addRole($pembinaRole, $team);
+                }
+            }
+        }
+
+        return response()->json([
+            'color' => 'success',
+            'title' => 'Berhasil!',
+            'text' => 'Ekstrakurikuler ' . request()->nama_ekskul . ' berhasil ditambahkan.',
+        ]);
+    }
+    public function update_ekskul(){
+        request()->validate(
+            [
+                'ekstrakurikuler_id' => 'required',
+                'nama_ekskul' => 'required|string|max:255',
+                'guru_id' => 'required',
+            ],
+            [
+                'nama_ekskul.required' => 'Nama Ekstrakurikuler wajib diisi.',
+                'guru_id.required' => 'Pembina Ekstrakurikuler wajib dipilih.',
+            ]
+        );
+
+        $ekskul = Ekstrakurikuler::find(request()->ekstrakurikuler_id);
+        if ($ekskul) {
+            $old_guru_id = $ekskul->guru_id;
+
+            $ekskul->nama_ekskul = request()->nama_ekskul;
+            $ekskul->guru_id = request()->guru_id;
+            $ekskul->alamat_ekskul = request()->alamat_ekskul ?: '-';
+            $ekskul->save();
+
+            // Also update linked rombongan belajar
+            $rombel = RombonganBelajar::find($ekskul->rombongan_belajar_id);
+            if ($rombel) {
+                $rombel->nama = request()->nama_ekskul;
+                $rombel->guru_id = request()->guru_id;
+                $rombel->ptk_id = request()->guru_id;
+                $rombel->save();
+            }
+
+            // Sync role pembina_ekskul
+            $semester = \App\Models\Semester::find($ekskul->semester_id);
+            if ($semester) {
+                $team = \App\Models\Team::updateOrCreate([
+                    'name' => $semester->nama,
+                    'display_name' => $semester->nama,
+                    'description' => $semester->nama,
+                ]);
+                $pembinaRole = \App\Models\Role::where('name', 'pembina_ekskul')->first();
+                if ($pembinaRole) {
+                    // 1. Add role to new pembina
+                    $new_user = \App\Models\User::where('guru_id', request()->guru_id)->first();
+                    if ($new_user && !$new_user->hasRole($pembinaRole, $semester->nama)) {
+                        $new_user->addRole($pembinaRole, $team);
+                    }
+
+                    // 2. Remove role from old pembina if they have no other ekskul in this semester
+                    if ($old_guru_id && $old_guru_id != request()->guru_id) {
+                        $other_ekskul_count = Ekstrakurikuler::where('guru_id', $old_guru_id)
+                            ->where('semester_id', $ekskul->semester_id)
+                            ->count();
+                        if ($other_ekskul_count == 0) {
+                            $old_user = \App\Models\User::where('guru_id', $old_guru_id)->first();
+                            if ($old_user && $old_user->hasRole($pembinaRole, $semester->nama)) {
+                                $old_user->removeRole($pembinaRole, $semester->nama);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return response()->json([
+            'color' => 'success',
+            'title' => 'Berhasil!',
+            'text' => 'Ekstrakurikuler ' . request()->nama_ekskul . ' berhasil diperbarui.',
+        ]);
+    }
+    public function hapus_ekskul(){
+        request()->validate([
+            'ekstrakurikuler_id' => 'required',
+        ]);
+
+        $ekskul = Ekstrakurikuler::find(request()->ekstrakurikuler_id);
+        if ($ekskul) {
+            $guru_id = $ekskul->guru_id;
+            $semester_id = $ekskul->semester_id;
+
+            $rombel = RombonganBelajar::find($ekskul->rombongan_belajar_id);
+            if ($rombel) {
+                \App\Models\AnggotaRombel::where('rombongan_belajar_id', $rombel->rombongan_belajar_id)->delete();
+                $rombel->delete();
+            }
+            $ekskul->delete();
+
+            // Sync role pembina_ekskul (remove if no other ekskul in this semester)
+            $semester = \App\Models\Semester::find($semester_id);
+            if ($semester && $guru_id) {
+                $other_ekskul_count = Ekstrakurikuler::where('guru_id', $guru_id)
+                    ->where('semester_id', $semester_id)
+                    ->count();
+                if ($other_ekskul_count == 0) {
+                    $pembinaRole = \App\Models\Role::where('name', 'pembina_ekskul')->first();
+                    $user = \App\Models\User::where('guru_id', $guru_id)->first();
+                    if ($user && $pembinaRole && $user->hasRole($pembinaRole, $semester->nama)) {
+                        $user->removeRole($pembinaRole, $semester->nama);
+                    }
+                }
+            }
+        }
+
+        return response()->json([
+            'color' => 'success',
+            'title' => 'Berhasil!',
+            'text' => 'Ekstrakurikuler berhasil dihapus.',
+        ]);
     }
 }

@@ -16,7 +16,20 @@ const notif = ref({
   title: '',
   text: '',
 })
+
+const form = ref({
+  nama_aplikasi_dapodik: '',
+  ip_erapor: '',
+  ip_dapodik: '',
+  token_dapodik: '',
+  url_dapodik: '',
+})
+
+const isEdit = ref(false)
+const isConnected = ref(false)
+
 const fetchData = async () => {
+  loadingBody.value = true
   try {
     const response = await useApi(createUrl('/sinkronisasi', {
       query: {
@@ -29,12 +42,90 @@ const fetchData = async () => {
     jam_sinkron.value = getData.jam_sinkron
     data_sinkron.value = getData.data_sinkron
     error.value = getData.error
+    
+    form.value.nama_aplikasi_dapodik = getData.nama_aplikasi_dapodik
+    form.value.ip_erapor = getData.ip_erapor
+    form.value.ip_dapodik = getData.ip_dapodik
+    form.value.token_dapodik = getData.token_dapodik
+    form.value.url_dapodik = getData.url_dapodik
+
+    if (form.value.token_dapodik && form.value.ip_dapodik) {
+      isConnected.value = true
+      isEdit.value = false
+    } else {
+      isEdit.value = true
+    }
   } catch (error) {
     console.error(error);
   } finally {
     loadingBody.value = false;
   }
 }
+
+const loadingTest = ref(false)
+const cekKoneksi = async () => {
+  loadingTest.value = true
+  try {
+    const res = await $api('/sinkronisasi/cek-koneksi', {
+      method: 'POST',
+      body: {
+        sekolah_id: $user.sekolah_id,
+        semester_id: $semester.semester_id,
+        npsn: $user.sekolah.npsn,
+        ip_dapodik: form.value.ip_dapodik,
+        ip_erapor: form.value.ip_erapor,
+        nama_aplikasi_dapodik: form.value.nama_aplikasi_dapodik,
+        token_dapodik: form.value.token_dapodik,
+        url_dapodik: (form.value.ip_dapodik.includes('http')) ? form.value.ip_dapodik : `http://${form.value.ip_dapodik}:5774`
+      }
+    })
+    
+    isAlertDialogVisible.value = true
+    notif.value = {
+      color: res.color,
+      title: res.title,
+      text: res.text,
+    }
+
+    if (res.color === 'success') {
+      isConnected.value = true
+      isEdit.value = false
+      fetchData()
+    }
+  } catch (err) {
+    toast.error('Gagal menghubungi server lokal.')
+  } finally {
+    loadingTest.value = false
+  }
+}
+
+const loadingProfil = ref(false)
+const tarikProfil = async () => {
+  loadingProfil.value = true
+  try {
+    const response = await $api('/sinkronisasi/tarik-profil', {
+      method: 'POST',
+      body: {
+        sekolah_id: $user.sekolah_id,
+        semester_id: $semester.semester_id,
+        url_dapodik: form.value.url_dapodik,
+        token_dapodik: form.value.token_dapodik,
+        npsn: $user.sekolah.npsn,
+      }
+    })
+    if (response.error) {
+      toast.error(response.message)
+    } else {
+      toast.success(response.message)
+      fetchData()
+    }
+  } catch (error) {
+    toast.error('Gagal mengambil data profil.')
+  } finally {
+    loadingProfil.value = false
+  }
+}
+
 const kurang = (item) => {
   if (item.dapodik > item.erapor)
     return true
@@ -63,8 +154,6 @@ const myTimer = async () => {
   })
 }
 const syncSatuan = async (server, aksi) => {
-  console.log(server);
-  console.log(aksi);
   if (server && aksi) {
     show.value = true
     syncText.value = 'Menyiapkan proses sinkronisasi'
@@ -104,12 +193,49 @@ const confirmAlert = () => {
   fetchData()
 }
 </script>
+
 <template>
   <div>
+    <VCard class="mb-6">
+      <VCardItem>
+        <VCardTitle>Konfigurasi Web Service Dapodik</VCardTitle>
+        <template #append>
+          <VBtn v-if="!isEdit" color="warning" variant="tonal" size="small" @click="isEdit = true">
+            <VIcon icon="tabler-edit" class="me-1" /> Edit
+          </VBtn>
+        </template>
+      </VCardItem>
+      <VCardText>
+        <VRow>
+          <VCol cols="12" md="3">
+            <AppTextField v-model="form.nama_aplikasi_dapodik" label="Nama Aplikasi" :disabled="!isEdit" placeholder="eRaporSMK" />
+          </VCol>
+          <VCol cols="12" md="3">
+            <AppTextField v-model="form.ip_erapor" label="IP e-Rapor" :disabled="!isEdit" placeholder="192.168.1.100" />
+          </VCol>
+          <VCol cols="12" md="3">
+            <AppTextField v-model="form.ip_dapodik" label="IP Dapodik" :disabled="!isEdit" placeholder="192.168.1.10" />
+          </VCol>
+          <VCol cols="12" md="3">
+            <AppTextField v-model="form.token_dapodik" label="Token Web Service" :disabled="!isEdit" placeholder="Masukkan Token" />
+          </VCol>
+          <VCol cols="12" class="d-flex gap-4">
+            <VBtn v-if="isEdit" color="primary" :loading="loadingTest" @click="cekKoneksi">
+              Simpan & Test Koneksi
+            </VBtn>
+            <VBtn v-if="isConnected && !isEdit" color="info" variant="tonal" :loading="loadingProfil" @click="tarikProfil">
+              Tarik Profil Sekolah
+            </VBtn>
+          </VCol>
+        </VRow>
+      </VCardText>
+    </VCard>
+
     <VCard class="text-center mb-10" v-if="loadingBody">
       <VProgressCircular :size="60" indeterminate color="error" class="my-10" />
     </VCard>
-    <VCard v-else>
+    
+    <VCard v-else-if="isConnected">
       <VCardText v-if="show">
         <VAlert color="secondary" class="text-center">
           {{ syncText }}
@@ -173,6 +299,15 @@ const confirmAlert = () => {
         </template>
       </VCardText>
     </VCard>
+
+    <VCard v-else class="text-center p-10">
+      <VCardText>
+        <VAlert color="warning" variant="tonal" icon="tabler-alert-triangle">
+          Silahkan lengkapi konfigurasi Web Service Dapodik di atas dan lakukan Test Koneksi terlebih dahulu untuk menampilkan data sinkronisasi.
+        </VAlert>
+      </VCardText>
+    </VCard>
+
     <AlertDialog v-model:isDialogVisible="isAlertDialogVisible" :confirm-color="notif.color"
       :confirm-title="notif.title" :confirm-msg="notif.text" @confirm="confirmAlert"></AlertDialog>
   </div>

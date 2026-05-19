@@ -192,11 +192,27 @@ class DownloadController extends Controller
 		$semester = Semester::find($semester_id);
 		$users = User::where(function($query) use ($semester, $sekolah_id, $data){
 			if($data == 'ptk'){
-				$query->whereHasRole(['guru', 'tu'], $semester->nama);
+				$query->whereHasRole(['guru', 'tu', 'user'], $semester->nama);
 			} else {
 				$query->whereHasRole(['siswa'], $semester->nama);
 			}
             $query->where('sekolah_id', $sekolah_id);
+            $query->where(function($q) {
+                $q->whereNull('guru_id')
+                  ->orWhereIn('guru_id', function($subQuery) {
+                      $subQuery->select('guru_id')
+                               ->from('guru')
+                               ->whereNull('deleted_at');
+                  });
+            });
+            $query->where(function($q) {
+                $q->whereNull('peserta_didik_id')
+                  ->orWhereIn('peserta_didik_id', function($subQuery) {
+                      $subQuery->select('peserta_didik_id')
+                               ->from('peserta_didik')
+                               ->whereNull('deleted_at');
+                  });
+            });
         })->orderBy('name')->get();
 		$output = [];
 		foreach($users as $user){

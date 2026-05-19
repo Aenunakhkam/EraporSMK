@@ -91,6 +91,9 @@ class SettingController extends Controller
                 'rombel_4_tahun' => $plucked->all(),
                 'url_dapodik' => get_setting('url_dapodik', request()->sekolah_id),
                 'token_dapodik' => get_setting('token_dapodik', request()->sekolah_id),
+                'nama_aplikasi_dapodik' => get_setting('nama_aplikasi_dapodik', request()->sekolah_id),
+                'ip_erapor' => get_setting('ip_erapor', request()->sekolah_id),
+                'ip_dapodik' => get_setting('ip_dapodik', request()->sekolah_id),
                 'logo_sekolah' => get_setting('logo_sekolah', request()->sekolah_id),
                 'bg_login' => get_setting('bg_login'),
                 'ttd_kepsek' => get_setting('ttd_kepsek', request()->sekolah_id, request()->semester_id),
@@ -149,7 +152,7 @@ class SettingController extends Controller
                 [
                     'key' => 'tanggal_rapor',
                     'sekolah_id' => $request->sekolah_id,
-                    'semester_id' => $request->semester_aktif,
+                    'semester_id' => $request->semester_id,
                 ],
                 [
                     'value' => $request->tanggal_rapor,
@@ -161,7 +164,7 @@ class SettingController extends Controller
                 [
                     'key' => 'tanggal_rapor_pts',
                     'sekolah_id' => $request->sekolah_id,
-                    'semester_id' => $request->semester_aktif,
+                    'semester_id' => $request->semester_id,
                 ],
                 [
                     'value' => $request->tanggal_rapor_pts,
@@ -173,7 +176,7 @@ class SettingController extends Controller
                 [
                     'key' => 'tanggal_rapor_kelas_akhir',
                     'sekolah_id' => $request->sekolah_id,
-                    'semester_id' => $request->semester_aktif,
+                    'semester_id' => $request->semester_id,
                 ],
                 [
                     'value' => $request->tanggal_rapor_kelas_akhir,
@@ -185,7 +188,7 @@ class SettingController extends Controller
                 [
                     'key' => 'tanggal_rapor_uts',
                     'sekolah_id' => $request->sekolah_id,
-                    'semester_id' => $request->semester_aktif,
+                    'semester_id' => $request->semester_id,
                 ],
                 [
                     'value' => $request->tanggal_rapor_uts,
@@ -210,16 +213,16 @@ class SettingController extends Controller
                     [
                         'rombongan_belajar_id' => $rombel_4_tahun,
                         'sekolah_id' => $request->sekolah_id,
-                        'semester_id' => $request->semester_aktif,
+                        'semester_id' => $request->semester_id,
                     ],
                     [
                         'last_sync' => now(),
                     ]
                 );
             }
-            RombelEmpatTahun::whereNotIn('rombongan_belajar_id', $rombongan_belajar_id)->where('sekolah_id', $request->sekolah_id)->where('semester_id', $request->semester_aktif)->delete();
+            RombelEmpatTahun::whereNotIn('rombongan_belajar_id', $rombongan_belajar_id)->where('sekolah_id', $request->sekolah_id)->where('semester_id', $request->semester_id)->delete();
         } else {
-            RombelEmpatTahun::where('sekolah_id', $request->sekolah_id)->where('semester_id', $request->semester_aktif)->delete();
+            RombelEmpatTahun::where('sekolah_id', $request->sekolah_id)->where('semester_id', $request->semester_id)->delete();
         }
         Setting::where('key', 'token_dapodik')->where('sekolah_id',  request()->sekolah_id)->delete();
         Setting::where('key', 'url_dapodik')->where('sekolah_id',  request()->sekolah_id)->delete();
@@ -240,10 +243,53 @@ class SettingController extends Controller
                 [
                     'key' => 'url_dapodik',
                     'sekolah_id' => request()->sekolah_id,
-                    //'semester_id' => request()->semester_id,
                 ],
                 [
                     'value' => request()->url_dapodik,
+                ]
+            );
+        }
+        if($request->nama_aplikasi_dapodik){
+            Setting::updateOrCreate(
+                [
+                    'key' => 'nama_aplikasi_dapodik',
+                    'sekolah_id' => request()->sekolah_id,
+                ],
+                [
+                    'value' => request()->nama_aplikasi_dapodik,
+                ]
+            );
+        }
+        if($request->ip_erapor){
+            Setting::updateOrCreate(
+                [
+                    'key' => 'ip_erapor',
+                    'sekolah_id' => request()->sekolah_id,
+                ],
+                [
+                    'value' => request()->ip_erapor,
+                ]
+            );
+        }
+        if($request->ip_dapodik){
+            Setting::updateOrCreate(
+                [
+                    'key' => 'ip_dapodik',
+                    'sekolah_id' => request()->sekolah_id,
+                ],
+                [
+                    'value' => request()->ip_dapodik,
+                ]
+            );
+            // Otomatis update url_dapodik jika belum ada atau ingin disinkronkan
+            $url_dapodik = (Str::contains(request()->ip_dapodik, 'http')) ? request()->ip_dapodik : 'http://'.request()->ip_dapodik.':5774';
+            Setting::updateOrCreate(
+                [
+                    'key' => 'url_dapodik',
+                    'sekolah_id' => request()->sekolah_id,
+                ],
+                [
+                    'value' => $url_dapodik,
                 ]
             );
         }
@@ -265,7 +311,7 @@ class SettingController extends Controller
                 [
                     'key' => 'ttd_kepsek',
                     'sekolah_id' => request()->sekolah_id,
-                    'semester_id' => request()->semester_aktif,
+                    'semester_id' => request()->semester_id,
                 ],
                 [
                     'value' => '/storage/images/'.basename($ttd_kepsek),
@@ -277,7 +323,7 @@ class SettingController extends Controller
                 [
                     'key' => 'ttd_tinggi',
                     'sekolah_id' => $request->sekolah_id,
-                    'semester_id' => request()->semester_aktif,
+                    'semester_id' => request()->semester_id,
                 ],
                 [
                     'value' => $request->ttd_tinggi,
@@ -286,7 +332,7 @@ class SettingController extends Controller
         } else {
             Setting::where(function($query){
                 $query->where('key', 'ttd_tinggi');
-                $query->where('semester_id', request()->semester_aktif);
+                $query->where('semester_id', request()->semester_id);
                 $query->where('sekolah_id',  request()->sekolah_id);
             })->delete();
         }
@@ -295,7 +341,7 @@ class SettingController extends Controller
                 [
                     'key' => 'ttd_lebar',
                     'sekolah_id' => $request->sekolah_id,
-                    'semester_id' => request()->semester_aktif,
+                    'semester_id' => request()->semester_id,
                 ],
                 [
                     'value' => $request->ttd_lebar,
@@ -304,7 +350,7 @@ class SettingController extends Controller
         } else {
             Setting::where(function($query){
                 $query->where('key', 'ttd_lebar');
-                $query->where('semester_id', request()->semester_aktif);
+                $query->where('semester_id', request()->semester_id);
                 $query->where('sekolah_id',  request()->sekolah_id);
             })->delete();
         }
@@ -313,7 +359,7 @@ class SettingController extends Controller
                 [
                     'key' => 'ttd_top',
                     'sekolah_id' => $request->sekolah_id,
-                    'semester_id' => request()->semester_aktif,
+                    'semester_id' => request()->semester_id,
                 ],
                 [
                     'value' => $request->ttd_top,
@@ -322,7 +368,7 @@ class SettingController extends Controller
         } else {
             Setting::where(function($query){
                 $query->where('key', 'ttd_top');
-                $query->where('semester_id', request()->semester_aktif);
+                $query->where('semester_id', request()->semester_id);
                 $query->where('sekolah_id',  request()->sekolah_id);
             })->delete();
         }
@@ -331,7 +377,7 @@ class SettingController extends Controller
                 [
                     'key' => 'ttd_left',
                     'sekolah_id' => $request->sekolah_id,
-                    'semester_id' => request()->semester_aktif,
+                    'semester_id' => request()->semester_id,
                 ],
                 [
                     'value' => $request->ttd_left,
@@ -340,7 +386,7 @@ class SettingController extends Controller
         } else {
             Setting::where(function($query){
                 $query->where('key', 'ttd_left');
-                $query->where('semester_id', request()->semester_aktif);
+                $query->where('semester_id', request()->semester_id);
                 $query->where('sekolah_id',  request()->sekolah_id);
             })->delete();
         }
@@ -364,7 +410,7 @@ class SettingController extends Controller
         Kasek::updateOrCreate(
             [
                 'sekolah_id' => $request->sekolah_id,
-                'semester_id' => $request->semester_aktif,
+                'semester_id' => $request->semester_id,
             ],
             [
                 'guru_id' => $request->kepala_sekolah,
@@ -374,7 +420,7 @@ class SettingController extends Controller
             [
                 'key' => 'jabatan',
                 'sekolah_id' => request()->sekolah_id,
-                'semester_id' => request()->semester_aktif,
+                'semester_id' => request()->semester_id,
             ],
             [
                 'value' => request()->jabatan,
@@ -394,8 +440,24 @@ class SettingController extends Controller
     public function users(){
         $team = Team::where('name', request()->periode_aktif)->first();
         $where = function($query){
-            $query->whereHasRole(['guru', 'siswa', 'tu'], request()->periode_aktif);
+            $query->whereHasRole(['guru', 'siswa', 'tu', 'user'], request()->periode_aktif);
             $query->where('sekolah_id', request()->sekolah_id);
+            $query->where(function($q) {
+                $q->whereNull('guru_id')
+                  ->orWhereIn('guru_id', function($subQuery) {
+                      $subQuery->select('guru_id')
+                               ->from('guru')
+                               ->whereNull('deleted_at');
+                  });
+            });
+            $query->where(function($q) {
+                $q->whereNull('peserta_didik_id')
+                  ->orWhereIn('peserta_didik_id', function($subQuery) {
+                      $subQuery->select('peserta_didik_id')
+                               ->from('peserta_didik')
+                               ->whereNull('deleted_at');
+                  });
+            });
         };
         $data = User::with(['roles' => function($query) use ($team){
             $query->wherePivot('team_id', $team->id);
@@ -494,7 +556,6 @@ class SettingController extends Controller
                 $query->where('semester_id', request()->semester_id);
             });
             $query->where('sekolah_id', request()->sekolah_id);
-            $query->whereNotNull('email');
         })->with(['bimbing_pd' => function($query){
             $query->whereHas('akt_pd', function($query){
                 $query->whereHas('anggota_akt_pd', function($query){
@@ -669,18 +730,16 @@ class SettingController extends Controller
     private function check_email($user, $field){
         $loggedUser = auth()->user();
         $random = Str::random(8);
-		$user->email = ($user->email != $loggedUser->email) ? $user->email : strtolower($random).'@erapor-smk.net';
-		$user->email = strtolower($user->email);
-        if($field == 'guru_id'){
-            $find_user_email = User::where('email', $user->email)->where($field, '<>', $user->ptk_id)->first();
-		} else {
-            $find_user_email = User::where('email', $user->email)->where($field, '<>', $user->peserta_didik_id)->first();
-		}
-        $find_user_email = User::where('email', $user->email)->first();
-		if($find_user_email){
-			$user->email = strtolower($random).'@erapor-smk.net';
-		}
-        return $user->email;
+        $email = $user->email ? trim($user->email) : '';
+        if (!$email || $email == $loggedUser->email) {
+            $email = strtolower($random).'@erapor-smk.net';
+        }
+        $email = strtolower($email);
+        $find_user_email = User::where('email', $email)->first();
+        if($find_user_email){
+            $email = strtolower(Str::random(8)).'@erapor-smk.net';
+        }
+        return $email;
     }
     public function unduhan(){
         $data = [

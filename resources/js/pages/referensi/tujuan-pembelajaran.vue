@@ -524,8 +524,14 @@ const getRombel = (tp_mapel) => {
           <template v-if="item.cp">
             {{ item.cp.mata_pelajaran.nama }}
           </template>
-          <template v-else>
+          <template v-else-if="item.kd">
             {{ item.kd.mata_pelajaran.nama }}
+          </template>
+          <template v-else-if="item.tp_mapel && item.tp_mapel.length">
+            {{ item.tp_mapel[0].nama_mata_pelajaran }}
+          </template>
+          <template v-else>
+            -
           </template>
         </template>
         <template #item.rombel="{ item }">
@@ -535,19 +541,25 @@ const getRombel = (tp_mapel) => {
           <template v-if="item.cp">
             {{ item.cp.elemen }}
           </template>
-          <template v-else>
+          <template v-else-if="item.kd">
             {{ item.kd.kompetensi_dasar }}
+          </template>
+          <template v-else>
+            -
           </template>
         </template>
         <template #item.kelas="{ item }">
           <template v-if="item.cp">
             {{ item.cp.fase }}
           </template>
-          <template v-else>
+          <template v-else-if="item.kd">
             <span v-if="item.kelas_10">10</span>
             <span v-if="item.kelas_11">&nbsp;11</span>
             <span v-if="item.kelas_12">&nbsp;12</span>
             <span v-if="item.kelas_13">&nbsp;13</span>
+          </template>
+          <template v-else>
+            -
           </template>
         </template>
         <template #item.status="{ item }">
@@ -699,6 +711,17 @@ const getRombel = (tp_mapel) => {
                   </VCol>
                 </VRow>
               </VCol>
+              <VCol cols="12">
+                <VRow no-gutters>
+                  <VCol cols="12" md="3" class="d-flex align-items-center">
+                    <label class="v-label text-body-2 text-high-emphasis" for="deskripsi">Deskripsi</label>
+                  </VCol>
+                  <VCol cols="12" md="9">
+                    <AppTextarea v-model="form.deskripsi" placeholder="Tulis Tujuan Pembelajaran secara manual disini..." auto-grow
+                      :error-messages="errors.deskripsi" />
+                  </VCol>
+                </VRow>
+              </VCol>
             </template>
             <template v-else>
               <VCol cols="12">
@@ -718,18 +741,16 @@ const getRombel = (tp_mapel) => {
             </template>
           </template>
           <VCol cols="12" v-if="showCp && !dataCp.length">
-            <VAlert type="error" title="Capaian Pembelajaran belum tersedia!" variant="tonal" class="mb-6">
+            <VAlert type="info" title="Capaian Pembelajaran belum tersedia" variant="tonal" class="mb-6">
               <template #text>
-                Silahkan tambah Referensi Capaian Pembelajaran terlebih dahulu <RouterLink
-                  :to="{ name: 'referensi-capaian-pembelajaran' }">disini</RouterLink>
+                Referensi Capaian Pembelajaran belum tersedia. Namun Anda tetap dapat menambahkan Tujuan Pembelajaran secara manual dengan menulis deskripsi di atas.
               </template>
             </VAlert>
           </VCol>
           <VCol cols="12" v-if="showKd && !dataKd.length">
-            <VAlert type="error" title="Kompetensi Dasar belum tersedia!" variant="tonal" class="mb-6">
+            <VAlert type="info" title="Kompetensi Dasar belum tersedia" variant="tonal" class="mb-6">
               <template #text>
-                Silahkan tambah Referensi Kompetensi Dasar terlebih dahulu <RouterLink
-                  :to="{ name: 'referensi-capaian-pembelajaran' }">disini</RouterLink>
+                Referensi Kompetensi Dasar belum tersedia. Namun Anda tetap dapat menambahkan Tujuan Pembelajaran secara manual dengan menulis deskripsi di atas.
               </template>
             </VAlert>
           </VCol>

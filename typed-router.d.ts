@@ -21,6 +21,7 @@ declare module 'vue-router/auto-routes' {
     'root': RouteRecordInfo<'root', '/', Record<never, never>, Record<never, never>>,
     '$404': RouteRecordInfo<'$404', '/:404(.*)', { 404: ParamValue<true> }, { 404: ParamValue<false> }>,
     '$error': RouteRecordInfo<'$error', '/:error(.*)', { error: ParamValue<true> }, { error: ParamValue<false> }>,
+    'admin-cetak-rapor': RouteRecordInfo<'admin-cetak-rapor', '/admin/cetak-rapor', Record<never, never>, Record<never, never>>,
     'changelog': RouteRecordInfo<'changelog', '/changelog', Record<never, never>, Record<never, never>>,
     'check-update': RouteRecordInfo<'check-update', '/check-update', Record<never, never>, Record<never, never>>,
     'login': RouteRecordInfo<'login', '/login', Record<never, never>, Record<never, never>>,

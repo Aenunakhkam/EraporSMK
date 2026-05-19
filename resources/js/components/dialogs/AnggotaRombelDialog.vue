@@ -16,6 +16,10 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  rombonganBelajarId: {
+    type: String,
+    required: false,
+  },
 })
 const updateModelValue = val => {
   emit('update:isDialogVisible', val)
@@ -68,6 +72,68 @@ const confirmClose = async () => {
   }, 300)
   emit('refresh')
 }
+
+// Tambah Siswa Baru
+const listSiswa = ref([])
+const loadingSiswa = ref(false)
+const selectedPdId = ref(null)
+const addingSiswa = ref(false)
+
+const fetchSiswa = async () => {
+  loadingSiswa.value = true
+  try {
+    const response = await useApi(createUrl('/referensi/rombongan-belajar/list-siswa', {
+      query: {
+        sekolah_id: $user.sekolah_id,
+        semester_id: $semester.semester_id,
+      }
+    }))
+    listSiswa.value = response.data.value.map(item => {
+      let currentRombel = item.anggota_rombel?.rombongan_belajar?.nama
+      return {
+        peserta_didik_id: item.peserta_didik_id,
+        nama: item.nama + (currentRombel ? ` (Aktif di Kelas: ${currentRombel})` : ' (Belum ada kelas)'),
+      }
+    })
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loadingSiswa.value = false
+  }
+}
+
+watch(() => props.isDialogVisible, (newVal) => {
+  if (newVal) {
+    fetchSiswa()
+    selectedPdId.value = null
+  }
+})
+
+const tambahSiswa = async () => {
+  if (!selectedPdId.value) return
+  addingSiswa.value = true
+  try {
+    await $api('/referensi/rombongan-belajar/tambah-anggota', {
+      method: 'POST',
+      body: {
+        rombongan_belajar_id: props.rombonganBelajarId,
+        peserta_didik_id: selectedPdId.value,
+        sekolah_id: $user.sekolah_id,
+        semester_id: $semester.semester_id,
+      },
+      onResponse({ response }) {
+        let getData = response._data
+        addingSiswa.value = false
+        notif.value = getData
+        isNotifVisible.value = true
+        selectedPdId.value = null
+      }
+    })
+  } catch (e) {
+    addingSiswa.value = false
+    console.error(e)
+  }
+}
 </script>
 
 <template>
@@ -86,6 +152,27 @@ const confirmClose = async () => {
           </VBtn>
         </VToolbarItems>
       </VToolbar>
+      
+      <VCardText class="d-flex align-center gap-4 py-4 flex-shrink-0 bg-light-primary border-bottom">
+         <div class="text-h6 font-weight-bold text-primary">Daftar Anggota Kelas</div>
+         <VSpacer />
+         <div class="d-flex align-center gap-3" style="inline-size: 32rem;">
+            <AppAutocomplete
+              v-model="selectedPdId"
+              :items="listSiswa"
+              item-title="nama"
+              item-value="peserta_didik_id"
+              placeholder="Cari & Pilih Siswa..."
+              :loading="loadingSiswa"
+              hide-details
+              style="flex-grow: 1;"
+            />
+            <VBtn color="primary" prepend-icon="tabler-plus" :loading="addingSiswa" :disabled="!selectedPdId" @click="tambahSiswa">
+               Tambah Siswa
+            </VBtn>
+         </div>
+      </VCardText>
+
       <VTable class="permission-table mb-6">
         <thead>
           <tr>

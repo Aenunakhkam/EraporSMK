@@ -29,6 +29,8 @@ const headers = [
 const items = ref([])
 const total = ref(0)
 const loadingTable = ref(false)
+const isAddMapelVisible = ref(false)
+
 onMounted(async () => {
   await fetchData();
 });
@@ -90,6 +92,7 @@ const fetchData = async () => {
           </VCol>
           <VCol cols="12" md="4" offset-md="4" class="d-flex gap-4">
             <AppTextField v-model="options.searchQuery" placeholder="Cari Data" />
+            <VBtn prepend-icon="tabler-plus" @click="isAddMapelVisible = true">Tambah</VBtn>
           </VCol>
         </VRow>
       </VCardText>
@@ -105,5 +108,6 @@ const fetchData = async () => {
       </VDataTableServer>
       <!-- SECTION -->
     </VCard>
+    <AddNewMapel v-model:is-dialog-visible="isAddMapelVisible" @close="fetchData()" />
   </section>
 </template>

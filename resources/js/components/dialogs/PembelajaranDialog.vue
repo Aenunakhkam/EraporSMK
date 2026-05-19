@@ -28,6 +28,10 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  rombonganBelajarId: {
+    type: String,
+    required: false,
+  },
 })
 const updateModelValue = val => {
   emit('update:isDialogVisible', val)
@@ -54,6 +58,80 @@ const hapus = async (pembelajaran_id) => {
     }
   })
 }
+
+// Tambah Mapel Baru
+const listMapel = ref([])
+const loadingMapel = ref(false)
+const addingMapel = ref(false)
+const newPembelajaran = ref({
+  mata_pelajaran_id: null,
+  guru_pengajar_id: null,
+  kelompok_id: null,
+  no_urut: '1',
+})
+
+const isNotifVisible = ref(false)
+const notif = ref({ color: '', title: '', text: '' })
+
+const fetchMapel = async () => {
+  loadingMapel.value = true
+  try {
+    const response = await useApi(createUrl('/referensi/rombongan-belajar/list-mapel'))
+    listMapel.value = response.data.value
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loadingMapel.value = false
+  }
+}
+
+watch(() => props.isDialogVisible, (newVal) => {
+  if (newVal) {
+    fetchMapel()
+    newPembelajaran.value = {
+      mata_pelajaran_id: null,
+      guru_pengajar_id: null,
+      kelompok_id: null,
+      no_urut: '1',
+    }
+  }
+})
+
+const tambahMapel = async () => {
+  if (!newPembelajaran.value.mata_pelajaran_id || !newPembelajaran.value.guru_pengajar_id || !newPembelajaran.value.kelompok_id) return
+  addingMapel.value = true
+  try {
+    await $api('/referensi/rombongan-belajar/tambah-pembelajaran', {
+      method: 'POST',
+      body: {
+        rombongan_belajar_id: props.rombonganBelajarId,
+        sekolah_id: $user.sekolah_id,
+        semester_id: $semester.semester_id,
+        ...newPembelajaran.value,
+      },
+      onResponse({ response }) {
+        let getData = response._data
+        addingMapel.value = false
+        notif.value = getData
+        isNotifVisible.value = true
+        newPembelajaran.value = {
+          mata_pelajaran_id: null,
+          guru_pengajar_id: null,
+          kelompok_id: null,
+          no_urut: '1',
+        }
+      }
+    })
+  } catch (e) {
+    addingMapel.value = false
+    console.error(e)
+  }
+}
+
+const confirmClose = () => {
+  isNotifVisible.value = false
+  emit('refresh')
+}
 </script>
 
 <template>
@@ -72,6 +150,51 @@ const hapus = async (pembelajaran_id) => {
           </VBtn>
         </VToolbarItems>
       </VToolbar>
+
+      <VCardText class="d-flex align-center gap-4 py-4 flex-shrink-0 bg-light-primary border-bottom">
+         <div class="text-h6 font-weight-bold text-primary">Daftar Pembelajaran / Mata Pelajaran</div>
+         <VSpacer />
+         <div class="d-flex align-center gap-3 flex-wrap justify-end" style="max-inline-size: 80%;">
+            <AppAutocomplete
+              v-model="newPembelajaran.mata_pelajaran_id"
+              :items="listMapel"
+              item-title="nama"
+              item-value="mata_pelajaran_id"
+              placeholder="Pilih Mata Pelajaran..."
+              :loading="loadingMapel"
+              hide-details
+              style="inline-size: 16rem;"
+            />
+            <AppAutocomplete
+              v-model="newPembelajaran.guru_pengajar_id"
+              :items="listGuru"
+              item-title="nama_lengkap"
+              item-value="guru_id"
+              placeholder="Pilih Guru..."
+              hide-details
+              style="inline-size: 14rem;"
+            />
+            <AppAutocomplete
+              v-model="newPembelajaran.kelompok_id"
+              :items="listKelompok"
+              item-title="nama_kelompok"
+              item-value="kelompok_id"
+              placeholder="Kelompok..."
+              hide-details
+              style="inline-size: 10rem;"
+            />
+            <AppTextField
+              v-model="newPembelajaran.no_urut"
+              placeholder="No Urut"
+              hide-details
+              style="inline-size: 5rem;"
+            />
+            <VBtn color="primary" prepend-icon="tabler-plus" :loading="addingMapel" :disabled="!newPembelajaran.mata_pelajaran_id || !newPembelajaran.guru_pengajar_id || !newPembelajaran.kelompok_id" @click="tambahMapel">
+               Tambah Mapel
+            </VBtn>
+         </div>
+      </VCardText>
+
       <VTable class="permission-table mb-6">
         <thead>
           <tr>
@@ -141,6 +264,21 @@ const hapus = async (pembelajaran_id) => {
           </template>
         </tbody>
       </VTable>
+    </VCard>
+  </VDialog>
+
+  <!-- Dialog Notifikasi -->
+  <VDialog v-model="isNotifVisible" max-width="500">
+    <VCard>
+      <VCardText class="text-center px-10 py-6">
+        <VBtn icon variant="outlined" :color="notif.color" class="my-4"
+          style="block-size: 88px; inline-size: 88px; pointer-events: none;">
+          <VIcon :icon="(notif.color == 'success') ? 'tabler-checks' : 'tabler-xbox-x'" size="38" />
+        </VBtn>
+        <h1 class="text-h4 mb-4">{{ notif.title }}</h1>
+        <p>{{ notif.text }}</p>
+        <VBtn color="success" @click="confirmClose">Ok</VBtn>
+      </VCardText>
     </VCard>
   </VDialog>
 </template>

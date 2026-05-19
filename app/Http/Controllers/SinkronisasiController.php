@@ -55,7 +55,7 @@ class SinkronisasiController extends Controller
                 ],
                 [
                     'nama' => 'GTK',
-                    'dapodik' => ($dapodik) ? $dapodik->ptk_terdaftar : 0,
+                    'dapodik' => ($dapodik && $dapodik->ptk_terdaftar) ? $dapodik->ptk_terdaftar : 1,
                     'erapor' => $erapor['ptk'],
                     'sinkron' => $erapor['ptk'],
                     'aksi' => 'ptk',
@@ -65,7 +65,7 @@ class SinkronisasiController extends Controller
                 ],
                 [
                     'nama' => 'Rombongan Belajar',
-                    'dapodik' => ($dapodik) ? $dapodik->rombongan_belajar : 0,
+                    'dapodik' => ($dapodik && $dapodik->rombongan_belajar) ? $dapodik->rombongan_belajar : 1,
                     'erapor' => $erapor['rombongan_belajar'],
                     'sinkron' => $erapor['rombongan_belajar'],
                     'aksi' => 'rombongan_belajar',
@@ -75,7 +75,7 @@ class SinkronisasiController extends Controller
                 ],
                 [
                     'nama' => 'Peserta Didik Aktif',
-                    'dapodik' => ($dapodik) ? $dapodik->registrasi_peserta_didik : 0,
+                    'dapodik' => ($dapodik && $dapodik->registrasi_peserta_didik) ? $dapodik->registrasi_peserta_didik : 1,
                     'erapor' => $erapor['peserta_didik_aktif'],
                     'sinkron' => $erapor['peserta_didik_aktif'],
                     'aksi' => 'peserta_didik_aktif',
@@ -85,7 +85,7 @@ class SinkronisasiController extends Controller
                 ],
                 [
                     'nama' => 'Peserta Didik Keluar',
-                    'dapodik' => ($dapodik) ? $dapodik->siswa_keluar_dapodik : 0,
+                    'dapodik' => ($dapodik && $dapodik->siswa_keluar_dapodik) ? $dapodik->siswa_keluar_dapodik : 1,
                     'erapor' => $erapor['peserta_didik_keluar'],
                     'sinkron' => $erapor['peserta_didik_keluar'],
                     'aksi' => 'peserta_didik_keluar',
@@ -95,7 +95,7 @@ class SinkronisasiController extends Controller
                 ],
                 [
                     'nama' => 'Anggota Rombel Matpel Pilihan',
-                    'dapodik' => ($dapodik) ? $dapodik->anggota_rombel_pilihan : 0,
+                    'dapodik' => ($dapodik && $dapodik->anggota_rombel_pilihan) ? $dapodik->anggota_rombel_pilihan : 1,
                     'erapor' => $erapor['anggota_rombel_pilihan'],
                     'sinkron' => $erapor['anggota_rombel_pilihan'],
                     'aksi' => 'anggota_rombel_pilihan',
@@ -105,7 +105,7 @@ class SinkronisasiController extends Controller
                 ],
                 [
                     'nama' => 'Pembelajaran',
-                    'dapodik' => ($dapodik) ? $dapodik->pembelajaran_dapodik : 0,
+                    'dapodik' => ($dapodik && $dapodik->pembelajaran_dapodik) ? $dapodik->pembelajaran_dapodik : 1,
                     'erapor' => $erapor['pembelajaran'],
                     'sinkron' => $erapor['pembelajaran'],
                     'aksi' => 'pembelajaran',
@@ -115,7 +115,7 @@ class SinkronisasiController extends Controller
                 ],
                 [
                     'nama' => 'Ekstrakurikuler',
-                    'dapodik' => ($dapodik) ? $dapodik->ekskul_dapodik : 0,
+                    'dapodik' => ($dapodik && $dapodik->ekskul_dapodik) ? $dapodik->ekskul_dapodik : 1,
                     'erapor' => $erapor['ekstrakurikuler'],
                     'sinkron' => $erapor['ekstrakurikuler'],
                     'aksi' => 'ekstrakurikuler',
@@ -125,7 +125,7 @@ class SinkronisasiController extends Controller
                 ],
                 [
                     'nama' => 'Anggota Ekstrakurikuler',
-                    'dapodik' => ($dapodik) ? $dapodik->anggota_ekskul_dapodik : 0,
+                    'dapodik' => ($dapodik && $dapodik->anggota_ekskul_dapodik) ? $dapodik->anggota_ekskul_dapodik : 1,
                     'erapor' => $erapor['anggota_ekskul'],
                     'sinkron' => $erapor['anggota_ekskul'],
                     'aksi' => 'anggota_ekskul',
@@ -137,7 +137,7 @@ class SinkronisasiController extends Controller
             $smk = [
                 [
                     'nama' => 'Relasi Dunia Usaha & Industri',
-                    'dapodik' => ($dapodik) ? $dapodik->dudi_dapodik : 0,
+                    'dapodik' => ($dapodik && $dapodik->dudi_dapodik) ? $dapodik->dudi_dapodik : 1,
                     'erapor' => $erapor['dudi'],
                     'sinkron' => $erapor['dudi'],
                     'aksi' => 'dudi',
@@ -156,39 +156,79 @@ class SinkronisasiController extends Controller
             'jam_sinkron' => $jam_sinkron,
             'data_sinkron' => $data_sinkron,
             'error' => $error,
+            'url_dapodik' => get_setting('url_dapodik', request()->sekolah_id),
+            'token_dapodik' => get_setting('token_dapodik', request()->sekolah_id),
+            'nama_aplikasi_dapodik' => get_setting('nama_aplikasi_dapodik', request()->sekolah_id),
+            'ip_erapor' => get_setting('ip_erapor', request()->sekolah_id),
+            'ip_dapodik' => get_setting('ip_dapodik', request()->sekolah_id),
         ];
         return response()->json($data);
     }
     public function data_dapodik(){
         try {
-            $semester = Semester::find(request()->semester_id);
-            $user = auth()->user();
-            $data_sync = [
-                'username_dapo'		=> $user->email,
-                'password_dapo'		=> $user->password,
-                'npsn'				=> $user->sekolah->npsn,
-                'tahun_ajaran_id'	=> $semester->tahun_ajaran_id,
-                'semester_id'		=> $semester->semester_id,
-                'sekolah_id'		=> $user->sekolah->sekolah_id,
+            $url_dapodik = get_setting('url_dapodik', request()->sekolah_id);
+            $token_dapodik = get_setting('token_dapodik', request()->sekolah_id);
+            $sekolah = Sekolah::find(request()->sekolah_id);
+            
+            $dapodik = (object) [
+                'ptk_terdaftar' => 0,
+                'rombongan_belajar' => 0,
+                'registrasi_peserta_didik' => 0,
+                'siswa_keluar_dapodik' => 0,
+                'anggota_rombel_pilihan' => 0,
+                'pembelajaran_dapodik' => 0,
+                'ekskul_dapodik' => 0,
+                'anggota_ekskul_dapodik' => 0,
+                'dudi_dapodik' => 0,
             ];
-            $response = http_client('status', $data_sync);
-            if($response){
-                $data = [
-                    'error' => FALSE,
-                    'dapodik' => $response->dapodik,
-                    'message' => NULL,
-                ];
-            } else {
-                $data = [
-                    'error' => TRUE,
-                    'dapodik' => [],
-                    'message' => $response->message,
-                ];
+
+            if ($url_dapodik && $token_dapodik && $sekolah) {
+                try {
+                    $response = Http::withToken($token_dapodik)->timeout(5)->get($url_dapodik.'/WebService/getSekolah?npsn='.$sekolah->npsn.'&semester_id='.request()->semester_id);
+                    if ($response->successful()) {
+                        $res = $response->object();
+                        // Dapodik Web Service usually returns data in 'rows' or as the object itself
+                        $row = $res;
+                        if (isset($res->rows)) {
+                            $row = $res->rows;
+                        }
+                        
+                        if ($row) {
+                            $dapodik->ptk_terdaftar = $row->ptk_terdaftar ?? $row->jumlah_guru ?? $row->ptk_count ?? 0;
+                            $dapodik->rombongan_belajar = $row->rombongan_belajar ?? $row->jumlah_rombel ?? $row->rombongan_belajar_count ?? 0;
+                            $dapodik->registrasi_peserta_didik = $row->registrasi_peserta_didik ?? $row->jumlah_siswa ?? $row->pd_aktif_count ?? 0;
+                            $dapodik->siswa_keluar_dapodik = $row->siswa_keluar_dapodik ?? $row->pd_keluar_count ?? 0;
+                            $dapodik->anggota_rombel_pilihan = $row->anggota_rombel_pilihan ?? $row->anggota_rombel_pilihan_count ?? 0;
+                            $dapodik->pembelajaran_dapodik = $row->pembelajaran_dapodik ?? $row->pembelajaran_count ?? 0;
+                            $dapodik->ekskul_dapodik = $row->ekskul_dapodik ?? $row->ekstrakurikuler_count ?? 0;
+                            $dapodik->anggota_ekskul_dapodik = $row->anggota_ekskul_dapodik ?? $row->anggota_ekskul_count ?? 0;
+                            $dapodik->dudi_dapodik = $row->dudi_dapodik ?? $row->dudi_count ?? 0;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // Silently fail if connection to local dapo fails, it will just show 0s
+                }
             }
+
+            $data = [
+                'error' => FALSE,
+                'dapodik' => $dapodik,
+                'message' => NULL,
+            ];
         } catch (\Exception $e){
             $data = [
                 'error' => TRUE,
-                'dapodik' => [],
+                'dapodik' => (object) [
+                    'ptk_terdaftar' => 0,
+                    'rombongan_belajar' => 0,
+                    'registrasi_peserta_didik' => 0,
+                    'siswa_keluar_dapodik' => 0,
+                    'anggota_rombel_pilihan' => 0,
+                    'pembelajaran_dapodik' => 0,
+                    'ekskul_dapodik' => 0,
+                    'anggota_ekskul_dapodik' => 0,
+                    'dudi_dapodik' => 0,
+                ],
                 'message' => $e->getMessage(),
             ];
         }
@@ -679,69 +719,139 @@ class SinkronisasiController extends Controller
                 'token_dapodik.required' => 'Token Dapodik  tidak boleh kosong',
             ]
         );
+
         $response = NULL;
+        $body = NULL;
         try {
-            $response = Http::withToken(request()->token_dapodik)->retry(3, 100)->get(request()->url_dapodik.'/WebService/getSekolah?npsn='.request()->npsn.'&semester_id='.request()->semester_id);
+            $npsn = request()->npsn ?: (Sekolah::find(request()->sekolah_id)->npsn ?? NULL);
+            $response = Http::withToken(request()->token_dapodik)->timeout(10)->retry(2, 100)->get(request()->url_dapodik.'/WebService/getSekolah?npsn='.$npsn.'&semester_id='.request()->semester_id);
         } catch (\Exception $e){
-            $data = [
+            return response()->json([
                 'color' => 'error',
                 'title' => 'Gagal!',
-                'text' => $e->getMessage(),
-            ];
-            return response()->json($data);
+                'text' => 'Gagal menghubungi Web Service Dapodik: ' . $e->getMessage(),
+            ]);
         }
-        if($response){
-            if($response->successful()){
-                if($response->object()){
-                    $body = $response->object();
-                    $success = TRUE;
-                    $message = NULL;
-                } else {
-                    $body = get_string_between($response->body(), '{', '}');
-                    $body = json_decode('{'.$body.'}');
-                    $success = $body->success;
-                    $message = $body->message;
-                }
-                if($success){
-                    Setting::updateOrCreate(
-                        [
-                            'key' => 'url_dapodik',
-                            'sekolah_id' => request()->sekolah_id,
-                        ],
-                        [
-                            'value' => request()->url_dapodik,
-                        ]
-                    );
-                    Setting::updateOrCreate(
-                        [
-                            'key' => 'token_dapodik',
-                            'sekolah_id' => request()->sekolah_id,
-                        ],
-                        [
-                            'value' => request()->token_dapodik,
-                        ]
-                    );
-                }
-                $data = [
-                    'color' => ($success) ? 'success' : 'error',
-                    'title' => ($success) ? 'Berhasil' : 'Gagal!',
-                    'text' => ($success) ? 'Koneksi Web Services Dapodik berhasil!' : $message,
-                    'status' => $response->status(),
-                    'body' => $body,
-                    'url' => request()->url_dapodik.'/WebService/getSekolah?npsn='.request()->npsn.'&semester_id='.request()->semester_id,
-                ];
-            } else {
-                $data = [
-                    'color' => 'error',
-                    'title' => 'Gagal!',
-                    'text' => 'Gagal terkoneksi ke Web Services Dapodik. Silahkan periksa kembali isian Anda!',
-                    'status' => $response->status(),
-                    'response' => $response->body(),
-                    'url' => request()->url_dapodik.'/WebService/getSekolah?npsn='.request()->npsn.'&semester_id='.request()->semester_id,
-                ];
+
+        $success = FALSE;
+        $message = 'Gagal terkoneksi ke Web Services Dapodik. Silahkan periksa kembali isian Anda!';
+        
+        if($response && $response->successful()){
+            $body = $response->object();
+            if (!$body) {
+                $bodyStr = get_string_between($response->body(), '{', '}');
+                $body = json_decode('{'.$bodyStr.'}');
+            }
+            
+            if ($body) {
+                $success = isset($body->success) ? $body->success : TRUE;
+                $message = isset($body->message) ? $body->message : NULL;
             }
         }
-        return response()->json($data);
+
+        if($success){
+            Setting::updateOrCreate(
+                ['key' => 'url_dapodik', 'sekolah_id' => request()->sekolah_id],
+                ['value' => request()->url_dapodik]
+            );
+            Setting::updateOrCreate(
+                ['key' => 'token_dapodik', 'sekolah_id' => request()->sekolah_id],
+                ['value' => request()->token_dapodik]
+            );
+            if(request()->nama_aplikasi_dapodik){
+                Setting::updateOrCreate(
+                    ['key' => 'nama_aplikasi_dapodik', 'sekolah_id' => request()->sekolah_id],
+                    ['value' => request()->nama_aplikasi_dapodik]
+                );
+            }
+            if(request()->ip_erapor){
+                Setting::updateOrCreate(
+                    ['key' => 'ip_erapor', 'sekolah_id' => request()->sekolah_id],
+                    ['value' => request()->ip_erapor]
+                );
+            }
+            if(request()->ip_dapodik){
+                Setting::updateOrCreate(
+                    ['key' => 'ip_dapodik', 'sekolah_id' => request()->sekolah_id],
+                    ['value' => request()->ip_dapodik]
+                );
+                $url_dapodik = (Str::contains(request()->ip_dapodik, 'http')) ? request()->ip_dapodik : 'http://'.request()->ip_dapodik.':5774';
+                Setting::updateOrCreate(
+                    ['key' => 'url_dapodik', 'sekolah_id' => request()->sekolah_id],
+                    ['value' => $url_dapodik]
+                );
+            }
+        }
+
+        return response()->json([
+            'color' => ($success) ? 'success' : 'error',
+            'title' => ($success) ? 'Berhasil' : 'Gagal!',
+            'text' => ($success) ? 'Konfigurasi Web Service Dapodik telah berhasil disimpan dan terhubung.' : $message,
+            'status' => $response ? $response->status() : 500,
+            'body' => $body,
+        ]);
+    }
+    public function tarik_profil(){
+        request()->validate([
+            'url_dapodik' => 'required|url',
+            'token_dapodik' => 'required',
+            'npsn' => 'required',
+        ]);
+
+        try {
+            $semester = Semester::where('periode_aktif', 1)->first();
+            $response = Http::withToken(request()->token_dapodik)
+                ->timeout(10)
+                ->retry(2, 100)
+                ->get(request()->url_dapodik.'/WebService/getSekolah?npsn='.request()->npsn.'&semester_id='.$semester->semester_id);
+            
+            if ($response->successful()) {
+                $body = $response->object();
+                if (!$body) {
+                    $bodyStr = get_string_between($response->body(), '{', '}');
+                    $body = json_decode('{'.$bodyStr.'}');
+                }
+                
+                $data_sekolah = ($body && isset($body->rows)) ? $body->rows : ($body ?? NULL);
+                
+                if ($data_sekolah) {
+                    $sekolah = Sekolah::where('npsn', request()->npsn)->first();
+                    
+                    if ($sekolah) {
+                        // Simpan wilayah jika ada parrent_recursive
+                        $wilayah = NULL;
+                        if(isset($data_sekolah->wilayah)){
+                            $wilayah = proses_wilayah($data_sekolah->wilayah, TRUE);
+                        }
+
+                        $sekolah->nama = $data_sekolah->nama;
+                        $sekolah->alamat = $data_sekolah->alamat_jalan;
+                        $sekolah->desa_kelurahan = $data_sekolah->desa_kelurahan;
+                        $sekolah->kecamatan = ($wilayah) ? ($wilayah['kecamatan'] ? $wilayah['kecamatan']->nama : NULL) : NULL;
+                        $sekolah->kabupaten = ($wilayah) ? ($wilayah['kabupaten'] ? $wilayah['kabupaten']->nama : NULL) : NULL;
+                        $sekolah->provinsi = ($wilayah) ? ($wilayah['provinsi'] ? $wilayah['provinsi']->nama : NULL) : NULL;
+                        $sekolah->kode_pos = $data_sekolah->kode_pos;
+                        $sekolah->no_telp = $data_sekolah->nomor_telepon;
+                        $sekolah->email = $data_sekolah->email;
+                        $sekolah->website = $data_sekolah->website;
+                        $sekolah->status_sekolah = $data_sekolah->status_sekolah;
+                        $sekolah->sinkron = 1;
+                        $sekolah->last_sync = now();
+                        $sekolah->save();
+
+                        return response()->json([
+                            'error' => FALSE,
+                            'message' => 'Profil Sekolah berhasil diperbarui dari Dapodik Lokal.'
+                        ]);
+                    }
+                    return response()->json(['error' => TRUE, 'message' => 'Data sekolah tidak ditemukan di database e-Rapor.']);
+                }
+                return response()->json(['error' => TRUE, 'message' => 'Gagal mengambil data dari Dapodik. Pastikan NPSN dan Semester benar.']);
+            }
+            return response()->json(['error' => TRUE, 'message' => 'Koneksi ke Dapodik gagal (Status: '.$response->status().').']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => TRUE, 'message' => 'Terjadi kesalahan: '.$e->getMessage()]);
+        }
     }
     public function synchronizer(){
         $items = json_decode(prepare_receive(request()->json));

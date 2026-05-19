@@ -9,6 +9,10 @@ use App\Models\Ptk;
 use App\Models\Dudi;
 use App\Models\Asesor;
 use App\Models\Agama;
+use App\Models\Sekolah;
+use App\Models\User;
+use App\Models\Role;
+use App\Models\Semester;
 
 class PtkController extends Controller
 {
@@ -39,10 +43,62 @@ class PtkController extends Controller
         return response()->json($data);
     }
     public function update(){
+        request()->validate(
+            [
+                'nama' => 'required',
+                'nik' => 'nullable|numeric|digits:16|unique:guru,nik,' . request()->guru_id . ',guru_id,deleted_at,NULL',
+                'email' => 'nullable|email|unique:guru,email,' . request()->guru_id . ',guru_id,deleted_at,NULL',
+            ],
+            [
+                'nama.required' => 'Nama tidak boleh kosong!',
+                'nik.numeric' => 'NIK harus berupa angka!',
+                'nik.digits' => 'NIK harus 16 digit!',
+                'nik.unique' => 'NIK sudah digunakan!',
+                'email.unique' => 'Email sudah digunakan!',
+            ]
+        );
+
         $ptk = Ptk::find(request()->guru_id);
-        $ptk->gelar_depan = request()->gelar_depan;
-        $ptk->gelar_belakang = request()->gelar_belakang;
-        $ptk->save();
+        if($ptk){
+            $ptk->nama = request()->nama;
+            $ptk->gelar_depan = request()->gelar_depan;
+            $ptk->gelar_belakang = request()->gelar_belakang;
+            $ptk->nuptk = request()->nuptk;
+            $ptk->nip = request()->nip;
+            $ptk->nik = request()->nik;
+            $ptk->jenis_kelamin = request()->jenis_kelamin ?: 'L';
+            $ptk->tempat_lahir = request()->tempat_lahir;
+            $ptk->tanggal_lahir = request()->tanggal_lahir;
+            
+            if (request()->agama) {
+                $agama = Agama::where('nama', request()->agama)->first();
+                if ($agama) {
+                    $ptk->agama_id = $agama->agama_id;
+                }
+            }
+            
+            $ptk->alamat = request()->alamat;
+            $ptk->rt = request()->rt ?: 0;
+            $ptk->rw = request()->rw ?: 0;
+            $ptk->desa_kelurahan = request()->desa_kelurahan;
+            $ptk->kecamatan = request()->kecamatan;
+            $ptk->kode_pos = request()->kode_pos ?: 0;
+            $ptk->no_hp = request()->no_hp;
+            $ptk->email = request()->email;
+            
+            $ptk->save();
+            
+            // Sync user details
+            $user = User::where('guru_id', $ptk->guru_id)->first();
+            if ($user) {
+                $user->name = $ptk->nama_lengkap;
+                if (request()->email) {
+                    $user->email = request()->email;
+                }
+                $user->save();
+            }
+        }
+
         if(request()->asesor){
             if(request()->dudi_id){
                 Asesor::updateOrCreate(
@@ -187,10 +243,126 @@ class PtkController extends Controller
         ];
         return response()->json($data);
     }
+    public function simpan_manual(){
+        request()->validate(
+            [
+                'nama' => 'required|string|max:255',
+                'nik' => 'nullable|numeric|digits:16|unique:guru,nik,NULL,guru_id,deleted_at,NULL',
+                'email' => 'nullable|email|unique:guru,email,NULL,guru_id,deleted_at,NULL',
+                'jenis_kelamin' => 'required|in:L,P',
+                'tanggal_lahir' => 'required|date_format:Y-m-d',
+                'tempat_lahir' => 'required|string|max:255',
+                'agama' => 'required',
+            ],
+            [
+                'nama.required' => 'Nama tidak boleh kosong!',
+                'nik.numeric' => 'NIK harus berupa angka!',
+                'nik.digits' => 'NIK harus 16 digit!',
+                'nik.unique' => 'NIK sudah terdaftar!',
+                'email.email' => 'Format email tidak valid!',
+                'email.unique' => 'Email sudah terdaftar!',
+                'jenis_kelamin.required' => 'Jenis kelamin wajib dipilih!',
+                'tanggal_lahir.required' => 'Tanggal lahir wajib diisi!',
+                'tanggal_lahir.date_format' => 'Format tanggal lahir salah! Gunakan format YYYY-MM-DD.',
+                'tempat_lahir.required' => 'Tempat lahir wajib diisi!',
+                'agama.required' => 'Agama wajib dipilih!',
+            ]
+        );
+
+        $agama_id = null;
+        if (request()->agama) {
+            $agama = Agama::where('nama', request()->agama)->first();
+            $agama_id = $agama ? $agama->agama_id : 99; // Default if not found to avoid NOT NULL error
+        }
+
+        $jenis_ptk_id = 97; // default instruktur
+        if (request()->jenis_gtk == 'guru') {
+            $jenis_ptk_id = 92; // Guru Mapel
+        } elseif (request()->jenis_gtk == 'tendik') {
+            $jenis_ptk_id = 11; // Tenaga Administrasi Sekolah
+        } elseif (request()->jenis_gtk == 'asesor') {
+            $jenis_ptk_id = 98; // Asesor
+        }
+
+        $sekolah = Sekolah::find(request()->sekolah_id);
+        $kode_wilayah = $sekolah ? $sekolah->kode_wilayah : '000000';
+
+        $ptk = Ptk::create([
+            'guru_id' => Str::uuid(),
+            'sekolah_id' => request()->sekolah_id,
+            'status_kepegawaian_id' => 0,
+            'kode_wilayah' => $kode_wilayah,
+            'nama' => request()->nama,
+            'gelar_depan' => request()->gelar_depan ?: null,
+            'gelar_belakang' => request()->gelar_belakang ?: null,
+            'nuptk' => request()->nuptk ?: null,
+            'nip' => request()->nip ?: null,
+            'nik' => request()->nik ?: null,
+            'jenis_kelamin' => request()->jenis_kelamin ?: 'L',
+            'tempat_lahir' => request()->tempat_lahir ?: '-',
+            'tanggal_lahir' => request()->tanggal_lahir ?: null,
+            'agama_id' => $agama_id,
+            'alamat' => request()->alamat_jalan ?: '-',
+            'rt' => request()->rt ?: 0,
+            'rw' => request()->rw ?: 0,
+            'desa_kelurahan' => request()->desa_kelurahan ?: '-',
+            'kecamatan' => request()->kecamatan ?: '-',
+            'kode_pos' => request()->kodepos ?: 0,
+            'no_hp' => request()->telp_hp ?: '-',
+            'email' => request()->email ?: null,
+            'jenis_ptk_id' => $jenis_ptk_id,
+            'last_sync' => now(),
+        ]);
+
+        $new_password = strtolower(Str::random(8));
+        $random = Str::random(8);
+        $user_email = $ptk->email ?: strtolower($random).'@erapor-smk.net';
+        $user = User::where('guru_id', $ptk->guru_id)->first();
+        if(!$user){
+            $user = User::create([
+                'name' => $ptk->nama_lengkap,
+                'email' => $user_email,
+                'nuptk'	=> $ptk->nuptk,
+                'password' => bcrypt($new_password),
+                'last_sync'	=> now(),
+                'sekolah_id'	=> request()->sekolah_id,
+                'password_dapo'	=> md5($new_password),
+                'guru_id'	=> $ptk->guru_id,
+                'default_password' => $new_password,
+            ]);
+            
+            $jenis_tu = jenis_gtk('tendik');
+            $asesor = jenis_gtk('asesor');
+            
+            if($jenis_tu->contains($ptk->jenis_ptk_id)){
+                $role = Role::where('name', 'tu')->first();
+            } elseif($asesor->contains($ptk->jenis_ptk_id)){
+                $role = Role::where('name', 'user')->first();
+            } else {
+                $role = Role::where('name', 'guru')->first();
+            }
+            
+            if($role){
+                $semester = Semester::where('periode_aktif', 1)->first();
+                if($semester){
+                    $user->addRole($role, $semester->nama);
+                }
+            }
+        }
+
+        return response()->json([
+            'color' => 'success',
+            'title' => 'Berhasil!',
+            'text' => 'Data '.ucfirst(request()->jenis_gtk ?? 'Guru').' '.$ptk->nama.' berhasil ditambahkan secara manual beserta akun pengguna.',
+        ]);
+    }
     public function hapus(){
         $find = Ptk::find(request()->guru_id);
         if($find){
             if($find->delete()){
+                // Also delete user account if exists
+                User::where('guru_id', request()->guru_id)->delete();
+                
                 $data = [
                     'color' => 'success',
                     'title' => 'Berhasil!',
@@ -208,6 +380,7 @@ class PtkController extends Controller
                 'color' => 'error',
                 'title' => 'Gagal!',
                 'text' => 'Data '.request()->data.' tidak ditemukan',
+                'guru_id' => request()->guru_id
             ];
         }
         return response()->json($data);

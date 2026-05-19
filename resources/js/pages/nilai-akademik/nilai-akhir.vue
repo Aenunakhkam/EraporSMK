@@ -112,6 +112,8 @@ const formReset = () => {
     akhir: {},
     kompeten: {}
   }
+  checkedTps.value = {}
+  pembelajaran.value = null
   errors.value = {
     tingkat: undefined,
     rombongan_belajar_id: undefined,
@@ -207,6 +209,47 @@ const changeMapel = async (val) => {
     });
   }
 };
+const pembelajaran = ref(null)
+const checkedTps = ref({})
+
+const getKkm = () => {
+  if (pembelajaran.value && pembelajaran.value.kkm) {
+    return pembelajaran.value.kkm
+  }
+  return 75 // Default KKM
+}
+
+const onCheckboxChange = (siswaId, tpId) => {
+  const key = siswaId + '#' + tpId
+  const isChecked = checkedTps.value[key]
+  if (isChecked) {
+    const grade = parseFloat(nilai.value.akhir[siswaId]) || 0
+    const kkm = getKkm()
+    if (grade < kkm) {
+      nilai.value.kompeten[key] = 0 // Belum tercapai
+    } else {
+      nilai.value.kompeten[key] = 1 // Tercapai
+    }
+  } else {
+    nilai.value.kompeten[key] = null // Unchecked, hapus record
+  }
+}
+
+const onGradeChange = (siswaId) => {
+  arrayData.value.tp.forEach((tp) => {
+    const key = siswaId + '#' + tp.tp_id
+    if (checkedTps.value[key]) {
+      const grade = parseFloat(nilai.value.akhir[siswaId]) || 0
+      const kkm = getKkm()
+      if (grade < kkm) {
+        nilai.value.kompeten[key] = 0
+      } else {
+        nilai.value.kompeten[key] = 1
+      }
+    }
+  })
+}
+
 const isDisabled = ref(false)
 const changeTeknik = async (val) => {
   arrayData.value.siswa = []
@@ -222,6 +265,7 @@ const changeTeknik = async (val) => {
         let getData = response._data;
         arrayData.value.siswa = getData.data_siswa;
         arrayData.value.tp = getData.data_tp;
+        pembelajaran.value = getData.pembelajaran;
         linkTemplateTp.value = ''
         if (form.value.bentuk_penilaian == 'asesmen') {
           isDisabled.value = true
@@ -236,8 +280,10 @@ const changeTeknik = async (val) => {
             nilai.value.akhir[siswa.anggota_rombel_id] = siswa.nilai_akhir
           }
           getData.data_tp.forEach((tp) => {
+            const key = siswa.anggota_rombel_id + '#' + tp.tp_id
             const capaian = siswa.capaian_kompeten.find(item => item.tp_id === tp.tp_id)
-            nilai.value.kompeten[siswa.anggota_rombel_id + '#' + tp.tp_id] = capaian?.kompeten
+            nilai.value.kompeten[key] = capaian?.kompeten
+            checkedTps.value[key] = (capaian?.kompeten === 1 || capaian?.kompeten === 0)
           })
         })
         showBtn.value = true;
@@ -352,16 +398,23 @@ const onFileChange = async (val) => {
                   <td :rowspan="arrayData.tp.length + 1" style="vertical-align: top;" class="pt-2">
                     <div style="inline-size: 6rem;">
                       <AppTextField type="number" v-model="nilai.akhir[siswa.anggota_rombel_id]"
-                        :disabled="isDisabled" />
+                        :disabled="isDisabled" @update:model-value="onGradeChange(siswa.anggota_rombel_id)" />
                     </div>
                   </td>
                 </tr>
                 <template v-for="(tp, i) in arrayData.tp">
                   <tr>
                     <td style="vertical-align: top;" class="pt-2">
-                      <AppSelect v-model="nilai.kompeten[siswa.anggota_rombel_id + '#' + tp.tp_id]"
-                        placeholder="== Pilih Capaian ==" :items="dataCapaian" clearable clear-icon="tabler-x"
-                        style="inline-size: 12rem;" />
+                      <div class="d-flex align-center">
+                        <VCheckbox v-model="checkedTps[siswa.anggota_rombel_id + '#' + tp.tp_id]"
+                          @update:model-value="onCheckboxChange(siswa.anggota_rombel_id, tp.tp_id)"
+                          density="compact" hide-details />
+                        <VChip v-if="checkedTps[siswa.anggota_rombel_id + '#' + tp.tp_id]"
+                          :color="nilai.kompeten[siswa.anggota_rombel_id + '#' + tp.tp_id] === 1 ? 'success' : 'error'"
+                          size="x-small" class="ms-2">
+                          {{ nilai.kompeten[siswa.anggota_rombel_id + '#' + tp.tp_id] === 1 ? 'Tercapai' : 'Belum Tercapai' }}
+                        </VChip>
+                      </div>
                     </td>
                     <td>{{ tp.deskripsi }}</td>
                   </tr>

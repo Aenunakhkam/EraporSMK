@@ -169,6 +169,10 @@ const reFecthAnggota = async () => {
     getAnggota(rombonganBelajarId.value)
 }
 const isSnackbarVisible = ref(false)
+const isAddRombelVisible = ref(false)
+const onRombelAdded = () => {
+    fetchData()
+}
 const savePembelajaran = async () => {
     await $api('/referensi/rombongan-belajar/simpan-pembelajaran', {
         method: 'POST',
@@ -180,6 +184,39 @@ const savePembelajaran = async () => {
             getPembelajaran(rombonganBelajarId.value)
         }
     })
+}
+
+const selectedRombel = ref(null)
+const editRombel = (item) => {
+    selectedRombel.value = item
+    isAddRombelVisible.value = true
+}
+
+const isConfirmDialogVisible = ref(false)
+const isAlertDialogVisible = ref(false)
+const notif = ref({ color: null, title: null, text: null })
+
+const hapusRombel = (item) => {
+    selectedRombel.value = item
+    isConfirmDialogVisible.value = true
+}
+
+const confirmDelete = async () => {
+    await $api('/referensi/rombongan-belajar/hapus', {
+        method: 'POST',
+        body: {
+            rombongan_belajar_id: selectedRombel.value.rombongan_belajar_id,
+        },
+        onResponse({ response }) {
+            let getData = response._data
+            notif.value = getData
+            isAlertDialogVisible.value = true
+        }
+    })
+}
+
+const confirmClose = async () => {
+    await fetchData()
 }
 </script>
 <template>
@@ -201,6 +238,7 @@ const savePembelajaran = async () => {
             <div class="d-flex align-center flex-wrap gap-4">
                 <!-- 👉 Search  -->
                 <AppTextField v-model="options.searchQuery" placeholder="Cari data" style="inline-size: 15.625rem;" />
+                <VBtn prepend-icon="tabler-plus" @click="isAddRombelVisible = true">Tambah Kelas</VBtn>
             </div>
         </VCardText>
         <VDivider />
@@ -248,6 +286,18 @@ const savePembelajaran = async () => {
                                 </template>
                                 <VListItemTitle>Pembelajaran</VListItemTitle>
                             </VListItem>
+                            <VListItem @click="editRombel(item)">
+                                <template #prepend>
+                                    <VIcon icon="tabler-edit" />
+                                </template>
+                                <VListItemTitle>Ubah Kelas</VListItemTitle>
+                            </VListItem>
+                            <VListItem @click="hapusRombel(item)">
+                                <template #prepend>
+                                    <VIcon icon="tabler-trash" />
+                                </template>
+                                <VListItemTitle>Hapus Kelas</VListItemTitle>
+                            </VListItem>
                         </VList>
                     </VMenu>
                 </VBtn>
@@ -260,12 +310,17 @@ const savePembelajaran = async () => {
         </VDataTableServer>
         <PembelajaranDialog v-model:isDialogVisible="showPembelajaran" v-model:isLoading="isLoading"
             :dialog-title="dialogTitle" v-model:listData="pembelajaran" v-model:form="form" :list-guru="guru"
-            :list-kelompok="kelompok" @save="savePembelajaran" @refresh="reFecthData" />
+            :list-kelompok="kelompok" :rombongan-belajar-id="rombonganBelajarId" @save="savePembelajaran" @refresh="reFecthData" />
         <AnggotaRombelDialog v-model:isDialogVisible="showAnggota" v-model:isLoading="isLoading"
-            :dialog-title="dialogTitle" v-model:listData="anggotaRombel" @refresh="reFecthAnggota" />
+            :dialog-title="dialogTitle" v-model:listData="anggotaRombel" :rombongan-belajar-id="rombonganBelajarId" @refresh="reFecthAnggota" />
+        <AddNewRombel v-model:is-dialog-visible="isAddRombelVisible" :jenis-rombel="props.jenisRombel" :edit-data="selectedRombel" @update:is-dialog-visible="(val) => { if(!val) selectedRombel = null }" @close="onRombelAdded" />
         <VSnackbar v-model="isSnackbarVisible" color="success" :location="snackBarLocaltion">
             {{ snackBarText }}
         </VSnackbar>
+        <ConfirmDialog v-model:isDialogVisible="isConfirmDialogVisible" v-model:isNotifVisible="isAlertDialogVisible"
+            confirmation-question="Apakah Anda yakin?" confirmation-text="Tindakan ini tidak dapat dikembalikan!"
+            :confirm-color="notif.color" :confirm-title="notif.title" :confirm-msg="notif.text" @confirm="confirmDelete"
+            @close="confirmClose" />
     </VCard>
 </template>
 <style lang="scss">

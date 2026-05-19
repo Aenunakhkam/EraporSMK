@@ -327,6 +327,9 @@ const dateConfig = ref({
                 </VCardText>
                 <VDivider />
                 <VCardText class="d-flex justify-end flex-wrap gap-3 pt-5 overflow-visible">
+                    <VBtn variant="tonal" color="secondary" @click="router.replace('/nilai-akademik/nilai-sikap')">
+                        Kembali
+                    </VBtn>
                     <VBtn variant="elevated" type="submit" :loading="confirmed" :disabled="confirmed">
                         Simpan
                     </VBtn>

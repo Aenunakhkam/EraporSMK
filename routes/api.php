@@ -19,7 +19,7 @@ use App\Http\Controllers\MonitoringController;
 
 Route::group(['prefix' => 'auth'], function () {
     Route::get('semester', [AuthController::class, 'semester']);
-    Route::get('/allow-register', [AuthController::class, 'allow_register']);
+    Route::get('allow-register', [AuthController::class, 'allow_register']);
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
     Route::post('reset-password', [AuthController::class, 'reset_password']);
@@ -53,6 +53,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::post('/kirim-data', [SinkronisasiController::class, 'kirim_data']);
         Route::get('/nilai-dapodik', [SinkronisasiController::class, 'nilai_dapodik']);
         Route::post('/cek-koneksi', [SinkronisasiController::class, 'cek_koneksi']);
+        Route::post('/tarik-profil', [SinkronisasiController::class, 'tarik_profil']);
     });
     Route::group(['prefix' => 'setting'], function () {
         Route::get('/', [SettingController::class, 'index']);
@@ -81,24 +82,42 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
             Route::post('/update', [PtkController::class, 'update']);
             Route::post('/upload', [PtkController::class, 'upload']);
             Route::post('/simpan', [PtkController::class, 'simpan']);
+            Route::post('/simpan-manual', [PtkController::class, 'simpan_manual']);
             Route::post('/hapus', [PtkController::class, 'hapus']);
         });
         Route::group(['prefix' => 'rombongan-belajar'], function () {
             Route::get('/', [RombelController::class, 'index']);
+            Route::get('/referensi', [RombelController::class, 'referensi']);
+            Route::post('/simpan', [RombelController::class, 'simpan']);
+            Route::post('/update', [RombelController::class, 'update']);
+            Route::post('/hapus', [RombelController::class, 'hapus']);
             Route::post('/pembelajaran', [RombelController::class, 'pembelajaran']);
             Route::post('/simpan-pembelajaran', [RombelController::class, 'simpan_pembelajaran']);
             Route::post('/hapus-pembelajaran', [RombelController::class, 'hapus_pembelajaran']);
             Route::post('/anggota-rombel', [RombelController::class, 'anggota_rombel']);
             Route::post('/hapus-anggota-rombel', [RombelController::class, 'hapus_anggota_rombel']);
+            Route::get('/list-siswa', [RombelController::class, 'list_siswa']);
+            Route::post('/tambah-anggota', [RombelController::class, 'tambah_anggota']);
+            Route::get('/list-mapel', [RombelController::class, 'list_mapel']);
+            Route::post('/tambah-pembelajaran', [RombelController::class, 'tambah_pembelajaran']);
         });
         Route::group(['prefix' => 'pd'], function () {
             Route::get('/', [PdController::class, 'index']);
             Route::get('/detil/{id}', [PdController::class, 'show']);
             Route::post('/update', [PdController::class, 'update']);
+            Route::get('/referensi-add', [PdController::class, 'referensi_add']);
+            Route::post('/simpan', [PdController::class, 'simpan']);
+            Route::post('/hapus', [PdController::class, 'hapus']);
         });
+        Route::get('/agama', [ReferensiController::class, 'agama']);
         Route::get('/mata-pelajaran', [ReferensiController::class, 'index']);
+        Route::post('/mata-pelajaran/simpan', [ReferensiController::class, 'simpan_mapel']);
         Route::group(['prefix' => 'ekstrakurikuler'], function () {
             Route::get('/', [ReferensiController::class, 'ekstrakurikuler']);
+            Route::get('/referensi', [ReferensiController::class, 'referensi_ekskul']);
+            Route::post('/simpan', [ReferensiController::class, 'simpan_ekskul']);
+            Route::post('/update', [ReferensiController::class, 'update_ekskul']);
+            Route::post('/hapus', [ReferensiController::class, 'hapus_ekskul']);
         });
         Route::group(['prefix' => 'dudi'], function () {
             Route::get('/', [ReferensiController::class, 'dudi']);

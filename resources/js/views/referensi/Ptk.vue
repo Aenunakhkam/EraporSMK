@@ -37,8 +37,8 @@ const headers = [
         sortable: false,
     },
     {
-        title: 'detil',
-        key: 'detil',
+        title: 'Aksi',
+        key: 'aksi',
         align: 'center',
         sortable: false,
     },
@@ -105,11 +105,39 @@ const notif = ref({
 const loadings = ref([])
 const cardTitle = ref('')
 const detilData = ref({})
+const listAgama = ref([])
+const fetchAgama = async () => {
+    try {
+        const response = await useApi(createUrl('/referensi/agama'))
+        listAgama.value = response.data.value
+    } catch (e) {
+        console.error(e)
+    }
+}
+onMounted(() => {
+    fetchAgama()
+})
 const form = ref({
     guru_id: null,
+    sekolah_id: $user.sekolah_id,
+    nama: null,
     gelar_depan: null,
     gelar_belakang: null,
-    sekolah_id: $user.sekolah_id,
+    nuptk: null,
+    nip: null,
+    nik: null,
+    jenis_kelamin: null,
+    tempat_lahir: null,
+    tanggal_lahir: null,
+    agama: null,
+    alamat: null,
+    rt: null,
+    rw: null,
+    desa_kelurahan: null,
+    kecamatan: null,
+    kode_pos: null,
+    no_hp: null,
+    email: null,
     dudi_id: null,
     asesor: props.data == 'asesor' ? true : false,
 })
@@ -129,9 +157,27 @@ const detilUser = async (guru_id) => {
             cardTitle.value = `Detil PTK (${getData.ptk.nama_lengkap})`
             detilData.value = getData.ptk
             dataDudi.value = getData.dudi
+            
+            form.value.nama = getData.ptk.nama
             form.value.gelar_depan = getData.ptk.gelar_depan
             form.value.gelar_belakang = getData.ptk.gelar_belakang
+            form.value.nuptk = getData.ptk.nuptk
+            form.value.nip = getData.ptk.nip
+            form.value.nik = getData.ptk.nik
+            form.value.jenis_kelamin = getData.ptk.jenis_kelamin
+            form.value.tempat_lahir = getData.ptk.tempat_lahir
+            form.value.tanggal_lahir = getData.ptk.tanggal_lahir
+            form.value.agama = getData.ptk.agama ? getData.ptk.agama.nama : null
+            form.value.alamat = getData.ptk.alamat
+            form.value.rt = getData.ptk.rt
+            form.value.rw = getData.ptk.rw
+            form.value.desa_kelurahan = getData.ptk.desa_kelurahan
+            form.value.kecamatan = getData.ptk.kecamatan
+            form.value.kode_pos = getData.ptk.kode_pos
+            form.value.no_hp = getData.ptk.no_hp
+            form.value.email = getData.ptk.email
             form.value.dudi_id = getData.dudi_id
+            
             loadings.value[guru_id] = false
             isDialogVisible.value = true
         }
@@ -220,9 +266,12 @@ const confirmDelete = async () => {
                     </div>
                 </div>
             </template>
-            <template #item.detil="{ item }">
-                <VBtn :loading="loadings[item.guru_id]" :disabled="loadings[item.guru_id]" color="warning"
-                    icon="tabler-eye" @click="detilUser(item.guru_id)" />
+            <template #item.aksi="{ item }">
+                <div class="d-flex gap-2 justify-center">
+                    <VBtn :loading="loadings[item.guru_id]" :disabled="loadings[item.guru_id]" color="warning"
+                        icon="tabler-edit" size="small" @click="detilUser(item.guru_id)" />
+                    <VBtn color="error" icon="tabler-trash" size="small" @click="hapus(item.guru_id)" />
+                </div>
             </template>
             <!-- pagination -->
             <template #bottom>
@@ -243,36 +292,30 @@ const confirmDelete = async () => {
                             <VCol cols="12">
                                 <VRow no-gutters>
                                     <VCol cols="12" md="3" class="d-flex align-items-center">
-                                        <label class="v-label text-body-2 text-high-emphasis" for="nama">Nama
-                                            Lengkap</label>
+                                        <label class="v-label text-body-2 text-high-emphasis" for="nama">Nama Lengkap (Tanpa Gelar)</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.nama_lengkap"
-                                            placeholder="Nama Lengkap" persistent-placeholder disabled />
+                                        <AppTextField id="nama" v-model="form.nama" placeholder="Nama Lengkap" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
                             <VCol cols="12">
                                 <VRow no-gutters>
                                     <VCol cols="12" md="3" class="d-flex align-items-center">
-                                        <label class="v-label text-body-2 text-high-emphasis" for="gelar_depan">Gelar
-                                            Depan</label>
+                                        <label class="v-label text-body-2 text-high-emphasis" for="gelar_depan">Gelar Depan</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="gelar_depan" v-model="form.gelar_depan"
-                                            placeholder="Gelar Depan" persistent-placeholder />
+                                        <AppTextField id="gelar_depan" v-model="form.gelar_depan" placeholder="Gelar Depan" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
                             <VCol cols="12">
                                 <VRow no-gutters>
                                     <VCol cols="12" md="3" class="d-flex align-items-center">
-                                        <label class="v-label text-body-2 text-high-emphasis" for="gelar_belakang">Gelar
-                                            Belakang</label>
+                                        <label class="v-label text-body-2 text-high-emphasis" for="gelar_belakang">Gelar Belakang</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="gelar_belakang" v-model="form.gelar_belakang"
-                                            placeholder="Gelar Belakang" persistent-placeholder />
+                                        <AppTextField id="gelar_belakang" v-model="form.gelar_belakang" placeholder="Gelar Belakang" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -282,8 +325,7 @@ const confirmDelete = async () => {
                                         <label class="v-label text-body-2 text-high-emphasis" for="nuptk">NUPTK</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.nuptk" placeholder="NUPTK"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="nuptk" v-model="form.nuptk" placeholder="NUPTK" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -293,8 +335,7 @@ const confirmDelete = async () => {
                                         <label class="v-label text-body-2 text-high-emphasis" for="nip">NIP</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.nip" placeholder="NIP"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="nip" v-model="form.nip" placeholder="NIP" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -304,69 +345,60 @@ const confirmDelete = async () => {
                                         <label class="v-label text-body-2 text-high-emphasis" for="nik">NIK</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.nik" placeholder="NIK"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="nik" v-model="form.nik" placeholder="NIK" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
                             <VCol cols="12">
                                 <VRow no-gutters>
                                     <VCol cols="12" md="3" class="d-flex align-items-center">
-                                        <label class="v-label text-body-2 text-high-emphasis" for="jenis_kelamin">Jenis
-                                            Kelamin</label>
+                                        <label class="v-label text-body-2 text-high-emphasis" for="jenis_kelamin">Jenis Kelamin</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.jenis_kelamin_str"
-                                            placeholder="Jenis Kelamin" persistent-placeholder disabled />
+                                        <AppSelect id="jenis_kelamin" v-model="form.jenis_kelamin" :items="[
+                                            { title: 'Laki-Laki', value: 'L' },
+                                            { title: 'Perempuan', value: 'P' }
+                                        ]" item-title="title" item-value="value" placeholder="Pilih Jenis Kelamin" />
                                     </VCol>
                                 </VRow>
                             </VCol>
                             <VCol cols="12">
                                 <VRow no-gutters>
                                     <VCol cols="12" md="3" class="d-flex align-items-center">
-                                        <label class="v-label text-body-2 text-high-emphasis" for="tempat_lahir">Tempat
-                                            Lahir</label>
+                                        <label class="v-label text-body-2 text-high-emphasis" for="tempat_lahir">Tempat Lahir</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.tempat_lahir"
-                                            placeholder="Tempat Lahir" persistent-placeholder disabled />
+                                        <AppTextField id="tempat_lahir" v-model="form.tempat_lahir" placeholder="Tempat Lahir" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
                             <VCol cols="12">
                                 <VRow no-gutters>
                                     <VCol cols="12" md="3" class="d-flex align-items-center">
-                                        <label class="v-label text-body-2 text-high-emphasis"
-                                            for="tanggal_lahir_indo">Tanggal
-                                            Lahir</label>
+                                        <label class="v-label text-body-2 text-high-emphasis" for="tanggal_lahir">Tanggal Lahir</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.tanggal_lahir_indo"
-                                            placeholder="Tanggal Lahir" persistent-placeholder disabled />
+                                        <AppTextField id="tanggal_lahir" v-model="form.tanggal_lahir" type="date" placeholder="Tanggal Lahir" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
                             <VCol cols="12">
                                 <VRow no-gutters>
                                     <VCol cols="12" md="3" class="d-flex align-items-center">
-                                        <label class="v-label text-body-2 text-high-emphasis"
-                                            for="agama_id">Agama</label>
+                                        <label class="v-label text-body-2 text-high-emphasis" for="agama">Agama</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.agama?.nama" placeholder="Agama"
-                                            persistent-placeholder disabled />
+                                        <AppSelect id="agama" v-model="form.agama" :items="listAgama.map(a => a.nama)" placeholder="Pilih Agama" />
                                     </VCol>
                                 </VRow>
                             </VCol>
                             <VCol cols="12">
                                 <VRow no-gutters>
                                     <VCol cols="12" md="3" class="d-flex align-items-center">
-                                        <label class="v-label text-body-2 text-high-emphasis"
-                                            for="alamat">Alamat</label>
+                                        <label class="v-label text-body-2 text-high-emphasis" for="alamat">Alamat</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.alamat" placeholder="Alamat"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="alamat" v-model="form.alamat" placeholder="Alamat" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -376,8 +408,7 @@ const confirmDelete = async () => {
                                         <label class="v-label text-body-2 text-high-emphasis" for="rt">RT</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.rt" placeholder="RT"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="rt" v-model="form.rt" placeholder="RT" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -387,56 +418,47 @@ const confirmDelete = async () => {
                                         <label class="v-label text-body-2 text-high-emphasis" for="rw">RW</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.rw" placeholder="RW"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="rw" v-model="form.rw" placeholder="RW" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
                             <VCol cols="12">
                                 <VRow no-gutters>
                                     <VCol cols="12" md="3" class="d-flex align-items-center">
-                                        <label class="v-label text-body-2 text-high-emphasis"
-                                            for="desa_kelurahan">Desa/Kelurahan</label>
+                                        <label class="v-label text-body-2 text-high-emphasis" for="desa_kelurahan">Desa/Kelurahan</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.desa_kelurahan"
-                                            placeholder="Desa/Kelurahan" persistent-placeholder disabled />
+                                        <AppTextField id="desa_kelurahan" v-model="form.desa_kelurahan" placeholder="Desa/Kelurahan" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
                             <VCol cols="12">
                                 <VRow no-gutters>
                                     <VCol cols="12" md="3" class="d-flex align-items-center">
-                                        <label class="v-label text-body-2 text-high-emphasis"
-                                            for="kecamatan">Kecamatan</label>
+                                        <label class="v-label text-body-2 text-high-emphasis" for="kecamatan">Kecamatan</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.kecamatan" placeholder="Kecamatan"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="kecamatan" v-model="form.kecamatan" placeholder="Kecamatan" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
                             <VCol cols="12">
                                 <VRow no-gutters>
                                     <VCol cols="12" md="3" class="d-flex align-items-center">
-                                        <label class="v-label text-body-2 text-high-emphasis"
-                                            for="kode_pos">Kodepos</label>
+                                        <label class="v-label text-body-2 text-high-emphasis" for="kode_pos">Kodepos</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.kode_pos" placeholder="Kodepos"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="kode_pos" v-model="form.kode_pos" placeholder="Kodepos" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
                             <VCol cols="12">
                                 <VRow no-gutters>
                                     <VCol cols="12" md="3" class="d-flex align-items-center">
-                                        <label class="v-label text-body-2 text-high-emphasis"
-                                            for="no_hp">Telp/HP</label>
+                                        <label class="v-label text-body-2 text-high-emphasis" for="no_hp">Telp/HP</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.no_hp" placeholder="Telp/HP"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="no_hp" v-model="form.no_hp" placeholder="Telp/HP" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -446,11 +468,11 @@ const confirmDelete = async () => {
                                         <label class="v-label text-body-2 text-high-emphasis" for="email">Email</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.email" placeholder="Email"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="email" v-model="form.email" placeholder="Email" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
+
                             <VCol cols="12" v-if="data == 'asesor'">
                                 <VRow no-gutters>
                                     <VCol cols="12" md="3" class="d-flex align-items-center">

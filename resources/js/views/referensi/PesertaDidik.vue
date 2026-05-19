@@ -162,6 +162,28 @@ const cardTitle = ref('')
 const detilData = ref({})
 const form = ref({
     peserta_didik_id: null,
+    nama: null,
+    no_induk: null,
+    nisn: null,
+    nik: null,
+    jenis_kelamin: null,
+    tempat_lahir: null,
+    tanggal_lahir: null,
+    agama_id: null,
+    alamat: null,
+    rt: null,
+    rw: null,
+    desa_kelurahan: null,
+    kecamatan: null,
+    kode_pos: null,
+    no_telp: null,
+    no_hp: null,
+    sekolah_asal: null,
+    diterima: null,
+    nama_ayah: null,
+    kerja_ayah: null,
+    nama_ibu: null,
+    kerja_ibu: null,
     status: null,
     anak_ke: null,
     diterima_kelas: null,
@@ -173,10 +195,16 @@ const form = ref({
     photo: null,
 })
 const errors = ref({
+    nama: undefined,
+    no_induk: undefined,
+    nisn: undefined,
+    nik: undefined,
+    tanggal_lahir: undefined,
     email: undefined,
     photo: undefined,
 })
 const pekerjaan = ref([])
+const dataAgama = ref([])
 const detilUser = async (peserta_didik_id) => {
     form.value.peserta_didik_id = peserta_didik_id
     loadings.value[peserta_didik_id] = true
@@ -186,6 +214,29 @@ const detilUser = async (peserta_didik_id) => {
         cardTitle.value = `Detil Peserta Didik (${getData.pd.nama})`
         detilData.value = getData.pd
         pekerjaan.value = getData.pekerjaan
+        dataAgama.value = getData.agama
+        form.value.nama = getData.pd.nama
+        form.value.no_induk = getData.pd.no_induk
+        form.value.nisn = getData.pd.nisn
+        form.value.nik = getData.pd.nik
+        form.value.jenis_kelamin = getData.pd.jenis_kelamin
+        form.value.tempat_lahir = getData.pd.tempat_lahir
+        form.value.tanggal_lahir = getData.pd.tanggal_lahir
+        form.value.agama_id = getData.pd.agama_id
+        form.value.alamat = getData.pd.alamat
+        form.value.rt = getData.pd.rt
+        form.value.rw = getData.pd.rw
+        form.value.desa_kelurahan = getData.pd.desa_kelurahan
+        form.value.kecamatan = getData.pd.kecamatan
+        form.value.kode_pos = getData.pd.kode_pos
+        form.value.no_telp = getData.pd.no_telp
+        form.value.no_hp = getData.pd.no_hp
+        form.value.sekolah_asal = getData.pd.sekolah_asal
+        form.value.diterima = getData.pd.diterima_raw
+        form.value.nama_ayah = getData.pd.nama_ayah
+        form.value.kerja_ayah = getData.pd.kerja_ayah
+        form.value.nama_ibu = getData.pd.nama_ibu
+        form.value.kerja_ibu = getData.pd.kerja_ibu
         form.value.status = getData.pd.status
         form.value.anak_ke = getData.pd.anak_ke
         form.value.diterima_kelas = getData.pd.diterima_kelas
@@ -201,9 +252,49 @@ const detilUser = async (peserta_didik_id) => {
         isDialogVisible.value = true
     }
 }
+const hapusPd = async (peserta_didik_id) => {
+    if (confirm('Apakah Anda yakin ingin menghapus data siswa ini? Data terkait juga akan dihapus.')) {
+        loadings.value[peserta_didik_id] = true
+        try {
+            const response = await $api('/referensi/pd/hapus', {
+                method: 'POST',
+                body: { peserta_didik_id }
+            });
+            notif.value = response;
+            isAlertDialogVisible.value = true;
+            await fetchData();
+        } catch (error) {
+            console.error(error);
+        } finally {
+            loadings.value[peserta_didik_id] = false
+        }
+    }
+}
 const onFormSubmit = async () => {
     const dataForm = new FormData();
     dataForm.append('peserta_didik_id', form.value.peserta_didik_id)
+    dataForm.append('nama', (form.value.nama) ? form.value.nama : '')
+    dataForm.append('no_induk', (form.value.no_induk) ? form.value.no_induk : '')
+    dataForm.append('nisn', (form.value.nisn) ? form.value.nisn : '')
+    dataForm.append('nik', (form.value.nik) ? form.value.nik : '')
+    dataForm.append('jenis_kelamin', (form.value.jenis_kelamin) ? form.value.jenis_kelamin : '')
+    dataForm.append('tempat_lahir', (form.value.tempat_lahir) ? form.value.tempat_lahir : '')
+    dataForm.append('tanggal_lahir', (form.value.tanggal_lahir) ? form.value.tanggal_lahir : '')
+    dataForm.append('agama_id', (form.value.agama_id) ? form.value.agama_id : '')
+    dataForm.append('alamat', (form.value.alamat) ? form.value.alamat : '')
+    dataForm.append('rt', (form.value.rt) ? form.value.rt : '')
+    dataForm.append('rw', (form.value.rw) ? form.value.rw : '')
+    dataForm.append('desa_kelurahan', (form.value.desa_kelurahan) ? form.value.desa_kelurahan : '')
+    dataForm.append('kecamatan', (form.value.kecamatan) ? form.value.kecamatan : '')
+    dataForm.append('kode_pos', (form.value.kode_pos) ? form.value.kode_pos : '')
+    dataForm.append('no_telp', (form.value.no_telp) ? form.value.no_telp : '')
+    dataForm.append('no_hp', (form.value.no_hp) ? form.value.no_hp : '')
+    dataForm.append('sekolah_asal', (form.value.sekolah_asal) ? form.value.sekolah_asal : '')
+    dataForm.append('diterima', (form.value.diterima) ? form.value.diterima : '')
+    dataForm.append('nama_ayah', (form.value.nama_ayah) ? form.value.nama_ayah : '')
+    dataForm.append('kerja_ayah', (form.value.kerja_ayah) ? form.value.kerja_ayah : '')
+    dataForm.append('nama_ibu', (form.value.nama_ibu) ? form.value.nama_ibu : '')
+    dataForm.append('kerja_ibu', (form.value.kerja_ibu) ? form.value.kerja_ibu : '')
     dataForm.append('status', (form.value.status) ? form.value.status : '')
     dataForm.append('anak_ke', (form.value.anak_ke) ? form.value.anak_ke : '')
     dataForm.append('diterima_kelas', (form.value.diterima_kelas) ? form.value.diterima_kelas : '')
@@ -213,25 +304,44 @@ const onFormSubmit = async () => {
     dataForm.append('telp_wali', (form.value.telp_wali) ? form.value.telp_wali : '')
     dataForm.append('kerja_wali', (form.value.kerja_wali) ? form.value.kerja_wali : '')
     dataForm.append('photo', (form.value.photo) ? form.value.photo : '')
-    await $api('/referensi/pd/update', {
-        method: 'POST',
-        body: dataForm,
-        onResponse({ request, response, options }) {
-            let getData = response._data
-            if (getData.errors) {
-                errors.value = getData.errors
-            } else {
-                errors.value = {
-                    email: undefined,
-                    photo: undefined,
+    try {
+        await $api('/referensi/pd/update', {
+            method: 'POST',
+            body: dataForm,
+            onResponse({ request, response, options }) {
+                let getData = response._data
+                if (getData.errors) {
+                    errors.value = getData.errors
+                } else {
+                    errors.value = {
+                        nama: undefined,
+                        no_induk: undefined,
+                        nisn: undefined,
+                        nik: undefined,
+                        tanggal_lahir: undefined,
+                        email: undefined,
+                        photo: undefined,
+                    }
+                    form.value.photo = null
+                    isDialogVisible.value = false
+                    notif.value = getData
+                    isAlertDialogVisible.value = true
                 }
-                form.value.photo = null
-                isDialogVisible.value = false
-                notif.value = getData
-                isAlertDialogVisible.value = true
             }
+        })
+    } catch (err) {
+        console.error(err)
+        if (err.response && err.response._data && err.response._data.errors) {
+            errors.value = err.response._data.errors
+        } else {
+            notif.value = {
+                color: 'error',
+                title: 'Gagal!',
+                text: (err.response && err.response._data && err.response._data.message) ? err.response._data.message : 'Terjadi kesalahan sistem'
+            }
+            isAlertDialogVisible.value = true
         }
-    })
+    }
 }
 const confirmDialog = async () => {
     await fetchData()
@@ -244,6 +354,8 @@ const cekPass = (pass, defaultPassword) => {
     }
     return false
 }
+import AddNewPd from '@/components/dialogs/AddNewPd.vue';
+const isDialogAddNew = ref(false)
 </script>
 <template>
     <VCard class="mb-6">
@@ -279,6 +391,9 @@ const cekPass = (pass, defaultPassword) => {
             </div>
             <VSpacer />
             <div class="d-flex align-center flex-wrap gap-4">
+                <VBtn v-if="props.status == 'aktif' && $can('read', 'Administrator')" color="primary" prepend-icon="tabler-plus" @click="isDialogAddNew = true">
+                    Tambah Data
+                </VBtn>
                 <!-- 👉 Search  -->
                 <AppTextField v-model="options.searchQuery" placeholder="Cari data" style="inline-size: 15.625rem;" />
             </div>
@@ -327,8 +442,14 @@ const cekPass = (pass, defaultPassword) => {
                 </template>
             </template>
             <template #item.detil="{ item }">
-                <VBtn :loading="loadings[item.peserta_didik_id]" :disabled="loadings[item.peserta_didik_id]"
-                    color="warning" icon="tabler-eye" @click="detilUser(item.peserta_didik_id)" />
+                <div class="d-flex justify-center gap-1">
+                    <VBtn :loading="loadings[item.peserta_didik_id]" :disabled="loadings[item.peserta_didik_id]"
+                        color="info" icon="tabler-eye" size="small" @click="detilUser(item.peserta_didik_id)" title="Lihat" />
+                    <VBtn v-if="$can('read', 'Administrator')" :loading="loadings[item.peserta_didik_id]" :disabled="loadings[item.peserta_didik_id]"
+                        color="warning" icon="tabler-edit" size="small" @click="detilUser(item.peserta_didik_id)" title="Edit" />
+                    <VBtn v-if="$can('read', 'Administrator')" :loading="loadings[item.peserta_didik_id]" :disabled="loadings[item.peserta_didik_id]"
+                        color="error" icon="tabler-trash" size="small" @click="hapusPd(item.peserta_didik_id)" title="Hapus" />
+                </div>
             </template>
             <!-- pagination -->
             <template #bottom>
@@ -345,7 +466,8 @@ const cekPass = (pass, defaultPassword) => {
                     </VCardItem>
                     <VDivider />
                     <VCardText>
-                        <VRow>
+                        <fieldset :disabled="!$can('read', 'Administrator')" style="border: 0; padding: 0; margin: 0; min-width: 0;">
+                            <VRow>
                             <VCol cols="12" class="text-center">
                                 <VAvatar rounded :size="150" color="primary" variant="tonal">
                                     <VImg :src="detilData?.photo" />
@@ -360,8 +482,7 @@ const cekPass = (pass, defaultPassword) => {
                                             Lengkap</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.nama" placeholder="Nama Lengkap"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="nama" v-model="form.nama" placeholder="Nama Lengkap" persistent-placeholder :error-messages="errors.nama" />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -371,8 +492,7 @@ const cekPass = (pass, defaultPassword) => {
                                         <label class="v-label text-body-2 text-high-emphasis" for="no_induk">NIS</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="no_induk" :value="detilData?.no_induk" placeholder="NIS"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="no_induk" v-model="form.no_induk" placeholder="NIS" persistent-placeholder :error-messages="errors.no_induk" />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -382,8 +502,7 @@ const cekPass = (pass, defaultPassword) => {
                                         <label class="v-label text-body-2 text-high-emphasis" for="nisn">NISN</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nisn" :value="detilData?.nisn" placeholder="NISN"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="nisn" v-model="form.nisn" placeholder="NISN" persistent-placeholder :error-messages="errors.nisn" />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -393,8 +512,7 @@ const cekPass = (pass, defaultPassword) => {
                                         <label class="v-label text-body-2 text-high-emphasis" for="nik">NIK</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.nik" placeholder="NIK"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="nama" v-model="form.nik" placeholder="NIK" persistent-placeholder :error-messages="errors.nik" />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -405,8 +523,7 @@ const cekPass = (pass, defaultPassword) => {
                                             Kelamin</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.jenis_kelamin_str"
-                                            placeholder="Jenis Kelamin" persistent-placeholder disabled />
+                                        <AppSelect v-model="form.jenis_kelamin" placeholder="== Pilih Jenis Kelamin ==" :items="[{title: 'Laki-Laki', value: 'L'}, {title: 'Perempuan', value: 'P'}]" clearable clear-icon="tabler-x" />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -417,8 +534,8 @@ const cekPass = (pass, defaultPassword) => {
                                             Lahir</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.tempat_lahir"
-                                            placeholder="Tempat Lahir" persistent-placeholder disabled />
+                                        <AppTextField id="nama" v-model="form.tempat_lahir"
+                                            placeholder="Tempat Lahir" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -430,8 +547,8 @@ const cekPass = (pass, defaultPassword) => {
                                             Lahir</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.tanggal_lahir_indo"
-                                            placeholder="Tanggal Lahir" persistent-placeholder disabled />
+                                        <AppTextField id="nama" v-model="form.tanggal_lahir"
+                                            placeholder="Tanggal Lahir" persistent-placeholder :error-messages="errors.tanggal_lahir" />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -442,8 +559,7 @@ const cekPass = (pass, defaultPassword) => {
                                             for="agama_id">Agama</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.agama?.nama" placeholder="Agama"
-                                            persistent-placeholder disabled />
+                                        <AppSelect v-model="form.agama_id" placeholder="== Pilih Agama ==" :items="dataAgama" item-title="nama" item-value="agama_id" clearable clear-icon="tabler-x" />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -478,8 +594,7 @@ const cekPass = (pass, defaultPassword) => {
                                             for="alamat">Alamat</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.alamat" placeholder="Alamat"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="nama" v-model="form.alamat" placeholder="Alamat" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -489,8 +604,7 @@ const cekPass = (pass, defaultPassword) => {
                                         <label class="v-label text-body-2 text-high-emphasis" for="rt">RT</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.rt" placeholder="RT"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="nama" v-model="form.rt" placeholder="RT" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -500,8 +614,7 @@ const cekPass = (pass, defaultPassword) => {
                                         <label class="v-label text-body-2 text-high-emphasis" for="rw">RW</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.rw" placeholder="RW"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="nama" v-model="form.rw" placeholder="RW" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -512,8 +625,8 @@ const cekPass = (pass, defaultPassword) => {
                                             for="desa_kelurahan">Desa/Kelurahan</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.desa_kelurahan"
-                                            placeholder="Desa/Kelurahan" persistent-placeholder disabled />
+                                        <AppTextField id="nama" v-model="form.desa_kelurahan"
+                                            placeholder="Desa/Kelurahan" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -524,8 +637,7 @@ const cekPass = (pass, defaultPassword) => {
                                             for="kecamatan">Kecamatan</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.kecamatan" placeholder="Kecamatan"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="nama" v-model="form.kecamatan" placeholder="Kecamatan" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -536,8 +648,7 @@ const cekPass = (pass, defaultPassword) => {
                                             for="kode_pos">Kodepos</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.kode_pos" placeholder="Kodepos"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="nama" v-model="form.kode_pos" placeholder="Kodepos" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -548,8 +659,7 @@ const cekPass = (pass, defaultPassword) => {
                                             for="no_telp">Telp/HP</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama" :value="detilData?.no_telp" placeholder="Telp/HP"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="nama" v-model="form.no_telp" placeholder="Telp/HP" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -560,8 +670,8 @@ const cekPass = (pass, defaultPassword) => {
                                             Sekolah</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="sekolah_asal" :value="detilData?.sekolah_asal"
-                                            placeholder="Asal Sekolah" persistent-placeholder disabled />
+                                        <AppTextField id="sekolah_asal" v-model="form.sekolah_asal"
+                                            placeholder="Asal Sekolah" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -586,8 +696,8 @@ const cekPass = (pass, defaultPassword) => {
                                             tanggal</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="diterima" :value="detilData?.diterima"
-                                            placeholder="Diterima pada tanggal" persistent-placeholder disabled />
+                                        <AppTextField id="diterima" v-model="form.diterima"
+                                            placeholder="Diterima pada tanggal" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -609,8 +719,8 @@ const cekPass = (pass, defaultPassword) => {
                                             Ayah</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama_ayah" :value="detilData?.nama_ayah"
-                                            placeholder="Nama Ayah" persistent-placeholder disabled />
+                                        <AppTextField id="nama_ayah" v-model="form.nama_ayah"
+                                            placeholder="Nama Ayah" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -621,8 +731,7 @@ const cekPass = (pass, defaultPassword) => {
                                             Ayah</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="kerja_ayah" :value="detilData?.pekerjaan_ayah?.nama"
-                                            placeholder="Pekerjaan Ayah" persistent-placeholder disabled />
+                                        <AppSelect v-model="form.kerja_ayah" placeholder="== Pilih Pekerjaan ==" :items="pekerjaan" item-title="nama" item-value="pekerjaan_id" clearable clear-icon="tabler-x" />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -633,8 +742,7 @@ const cekPass = (pass, defaultPassword) => {
                                             Ibu</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="nama_ibu" :value="detilData?.nama_ibu" placeholder="Nama Ibu"
-                                            persistent-placeholder disabled />
+                                        <AppTextField id="nama_ibu" v-model="form.nama_ibu" placeholder="Nama Ibu" persistent-placeholder />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -645,8 +753,7 @@ const cekPass = (pass, defaultPassword) => {
                                             Ibu</label>
                                     </VCol>
                                     <VCol cols="12" md="9">
-                                        <AppTextField id="kerja_ibu" :value="detilData?.pekerjaan_ibu?.nama"
-                                            placeholder="Pekerjaan Ibu" persistent-placeholder disabled />
+                                        <AppSelect v-model="form.kerja_ibu" placeholder="== Pilih Pekerjaan ==" :items="pekerjaan" item-title="nama" item-value="pekerjaan_id" clearable clear-icon="tabler-x" />
                                     </VCol>
                                 </VRow>
                             </VCol>
@@ -712,13 +819,14 @@ const cekPass = (pass, defaultPassword) => {
                                 </VRow>
                             </VCol>
                         </VRow>
+                        </fieldset>
                     </VCardText>
                     <VDivider />
                     <VCardText class="d-flex justify-end flex-wrap gap-3 pt-5 overflow-visible">
                         <VBtn color="secondary" variant="tonal" @click="isDialogVisible = false">
                             Tutup
                         </VBtn>
-                        <VBtn type="submit">
+                        <VBtn type="submit" v-if="$can('read', 'Administrator')">
                             Perbaharui
                         </VBtn>
                     </VCardText>
@@ -727,6 +835,7 @@ const cekPass = (pass, defaultPassword) => {
         </VDialog>
         <AlertDialog v-model:isDialogVisible="isAlertDialogVisible" :confirm-color="notif.color"
             :confirm-title="notif.title" :confirm-msg="notif.text" @confirm="confirmDialog" />
+        <AddNewPd v-model:isDialogVisible="isDialogAddNew" cardTitle="Tambah Peserta Didik Manual" @close="fetchData" />
     </VCard>
 </template>
 <style lang="scss">

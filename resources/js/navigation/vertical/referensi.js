@@ -112,6 +112,13 @@ export default [
         subject: 'Administrator',
       },
       {
+        title: 'Cetak Rapor',
+        to: 'admin-cetak-rapor',
+        icon: { icon: 'tabler-printer' },
+        action: 'read',
+        subject: 'Administrator',
+      },
+      {
         title: 'Kompetensi Dasar',
         to: 'referensi-kompetensi-dasar',
         icon: { icon: 'tabler-hand-finger-right' },

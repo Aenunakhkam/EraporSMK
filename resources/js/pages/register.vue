@@ -29,7 +29,7 @@ const fetchData = async () => {
   try {
     const response = await useApi(createUrl('/auth/allow-register'));
     let getData = response.data.value
-    if (getData.sekolah) {
+    if (getData && getData.sekolah !== undefined) {
       if (!getData.allowRegister) {
         await nextTick(() => {
           router.replace({ to: '$404' })
@@ -42,6 +42,7 @@ const fetchData = async () => {
     }
   } catch (error) {
     console.error(error);
+    loadingBody.value = false;
   }
 }
 const refVForm = ref();
@@ -56,10 +57,10 @@ const failed = ref({
   password: undefined,
 });
 const isPasswordVisible = ref(false)
-const notify = () => {
+const notify = (message) => {
   toast(
     `<strong>Registrasi Berhasil</strong>
-    <br>Anda telah berhasil register. Sekarang Anda dapat mulai berselancar di Aplikasi e-Rapor SMK!`, {
+    <br>${message || 'Anda telah berhasil register. Sekarang Anda dapat mulai berselancar di Aplikasi e-Rapor SMK!'}`, {
     closeOnClick: false,
     autoClose: 5000,
     position: toast.POSITION.TOP_RIGHT,
@@ -76,27 +77,29 @@ const register = async () => {
         email: form.value.email,
         password: form.value.password,
       },
-      onResponseError({ response }) {
-        failed.value = response._data.errors;
-        loadingButton.value = false
-      },
     });
-    const { error, errors, message } = res;
+    const { error, message, errors } = res;
     if (error) {
       loadingButton.value = false
-      failed.value.npsn = errors.npsn?.join(', ')
-      failed.value.email = errors.email?.join(', ')
-      failed.value.password = errors.password?.join(', ')
+      if (errors) {
+        failed.value.npsn = errors.npsn?.join(', ')
+        failed.value.email = errors.email?.join(', ')
+        failed.value.password = errors.password?.join(', ')
+      } else {
+        toast.error(message || 'Terjadi kesalahan pada server');
+      }
     } else {
       loadingButton.value = false
       await nextTick(() => {
         router.replace('/login').then(() => {
-          notify()
+          notify(message)
         });
       });
     }
   } catch (err) {
+    loadingButton.value = false
     console.error(err);
+    toast.error('Gagal menghubungkan ke server lokal. Pastikan server e-Rapor menyala.');
   }
 };
 const onSubmit = () => {

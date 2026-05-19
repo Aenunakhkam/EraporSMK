@@ -24,15 +24,19 @@ class AuthController extends Controller
 {
     public function semester(){
         $data = [
-            'semester' => Semester::whereHas('tahun_ajaran', function($query){
-                $query->where('periode_aktif', 1);
-            })->orderBy('semester_id', 'DESC')->get(),
+            'semester' => Semester::orderBy('semester_id', 'DESC')->get(),
             'semester_id' => Semester::where('periode_aktif', 1)->first()?->semester_id,
-            'allowRegister' => config('app.registration'),
-            'sekolah' => Sekolah::count(),
+            'allowRegister' => true,
+            'sekolah' => 0,
             'bg_login' => get_setting('bg_login'),
         ];
         return response()->json($data);
+    }
+    public function allow_register(){
+        return response()->json([
+            'allowRegister' => true,
+            'sekolah' => 0,
+        ]);
     }
     public function register(Request $request){
         $request->validate(
@@ -49,26 +53,60 @@ class AuthController extends Controller
             ]
         );
         try {
-            $data_sync = [
-                'npsn' => $request->npsn,
-                'email' => $request->email,
-                'password' => $request->password,
-            ];
-            $response = Http::post('http://sync.erapor-smk.net/api/v8/register', $data_sync);
-            $data = $response->object();
-            if($response->successful()){
-                return $this->create_user($data, $request->email, $request->password);
-            } else {
+            // Cek apakah semester aktif tersedia
+            $semester = Semester::where('periode_aktif', 1)->first();
+            if (!$semester) {
                 return response()->json([
                     'error'=> TRUE,
-                    'message' => $data->message,
-                    'errors' => $data->errors,
+                    'message' => 'Data Semester belum diinisialisasi. Silahkan jalankan database seeder atau hubungi administrator.'
                 ]);
             }
+
+            // Bypass sync server dan buat data sekolah & user secara lokal
+            // Gunakan NPSN sebagai sekolah_id sementara jika belum ada
+            $sekolah = Sekolah::updateOrCreate(
+                ['npsn' => $request->npsn],
+                [
+                    'sekolah_id' => $request->npsn, // Gunakan NPSN sebagai ID sementara
+                    'nama' => 'Sekolah (Belum Sinkron)',
+                    'nss' => $request->npsn,
+                    'alamat' => '-',
+                    'email' => $request->email,
+                    'last_sync' => now(),
+                    'sinkron' => 0,
+                ]
+            );
+
+            $user = User::updateOrCreate(
+                ['email' => $request->email],
+                [
+                    'sekolah_id' => $sekolah->sekolah_id,
+                    'name' => 'Administrator',
+                    'password' => bcrypt($request->password),
+                    'last_sync'	=> now(),
+                ]
+            );
+
+            $adminRole = Role::where('name', 'admin')->first();
+            if ($adminRole) {
+                $team = Team::updateOrCreate([
+                    'name' => $semester->nama,
+                    'display_name' => $semester->nama,
+                    'description' => $semester->nama,
+                ]);
+                if (!$user->hasRole('admin', $semester->nama)) {
+                    $user->addRole($adminRole, $team);
+                }
+            }
+
+            return response()->json([
+                'error'=> FALSE,
+                'message' => 'Registrasi Berhasil secara Lokal. Silahkan login dan lengkapi profil melalui menu Sinkronisasi.'
+            ]);
         } catch (\Exception $e){
             return response()->json([
                 'error'=> TRUE,
-                'message' => $e->getMessage()
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ]);
         }
     }
@@ -553,13 +591,6 @@ class AuthController extends Controller
                 'message' => 'Jenjang Sekolah Salah'
             ]);
         }
-    }
-    public function allow_register(){
-        $data = [
-            'allowRegister' => config('app.registration'),
-            'sekolah' => Sekolah::count(),
-        ];
-        return response()->json($data);
     }
     public function reset_password(){
         if(request()->token){

@@ -117,7 +117,46 @@ const sinkron = async (ekstrakurikuler_id) => {
   console.log(ekstrakurikuler_id);
 }
 const reFecthAnggota = async () => {
-  getAnggota(rombonganBelajarId.value)
+  anggota(rombonganBelajarId.value)
+}
+
+const isAddEkskulVisible = ref(false)
+const selectedEkskul = ref(null)
+
+const editEkskul = (item) => {
+  selectedEkskul.value = item
+  isAddEkskulVisible.value = true
+}
+
+const onEkskulAdded = () => {
+  fetchData()
+}
+
+const isConfirmDialogVisible = ref(false)
+const isAlertDialogVisible = ref(false)
+const notif = ref({ color: null, title: null, text: null })
+
+const hapusEkskul = (item) => {
+  selectedEkskul.value = item
+  isConfirmDialogVisible.value = true
+}
+
+const confirmDelete = async () => {
+  await $api('/referensi/ekstrakurikuler/hapus', {
+    method: 'POST',
+    body: {
+      ekstrakurikuler_id: selectedEkskul.value.ekstrakurikuler_id,
+    },
+    onResponse({ response }) {
+      let getData = response._data
+      notif.value = getData
+      isAlertDialogVisible.value = true
+    }
+  })
+}
+
+const confirmClose = async () => {
+  await fetchData()
 }
 </script>
 <template>
@@ -138,8 +177,9 @@ const reFecthAnggota = async () => {
               { value: 100, title: '100' },
             ]" />
           </VCol>
-          <VCol cols="12" md="4" offset-md="4" class="d-flex gap-4">
-            <AppTextField v-model="options.searchQuery" placeholder="Cari Data" />
+          <VCol cols="12" md="8" class="d-flex justify-end gap-4 align-center">
+            <AppTextField v-model="options.searchQuery" placeholder="Cari Data" style="max-width: 250px;" />
+            <VBtn prepend-icon="tabler-plus" @click="isAddEkskulVisible = true">Tambah Ekskul</VBtn>
           </VCol>
         </VRow>
       </VCardText>
@@ -148,22 +188,33 @@ const reFecthAnggota = async () => {
       <VDataTableServer class="text-no-wrap" :items="items" :server-items-length="total" :headers="headers"
         :options="options" :loading="loadingTable" loading-text="Loading..." @update:sortBy="updateSortBy">
         <template #item.guru="{ item }">
-          {{ item.guru.nama_lengkap }}
+          {{ item.guru?.nama_lengkap || '-' }}
         </template>
         <template #item.anggota="{ item }">
-          <VBadge :content="item.rombongan_belajar.anggota_rombel_count" color="success">
+          <VBadge v-if="item.rombongan_belajar" :content="item.rombongan_belajar.anggota_rombel_count" color="success">
             <VBtn :loading="loadingAnggota[item.rombongan_belajar_id]"
               :disabled="loadingAnggota[item.rombongan_belajar_id]" @click="anggota(item.rombongan_belajar_id)"
               size="x-small">
               Detil
             </VBtn>
           </VBadge>
+          <span v-else>-</span>
         </template>
         <template #item.sinkron="{ item }">
-          <VBtn color="error" @click="sinkron(item.ekstrakurikuler_id)" size="x-small"
-            :loading="loadingSinkron[item.ekstrakurikuler_id]" :disabled="loadingSinkron[item.ekstrakurikuler_id]">
-            <VIcon start icon="tabler-refresh" />Sinkron Anggta
-          </VBtn>
+          <div class="d-flex gap-2 justify-center align-center">
+            <VBtn icon variant="text" color="primary" size="small" @click="editEkskul(item)">
+              <VIcon icon="tabler-edit" />
+              <VTooltip activator="parent" location="top">Ubah Ekstrakurikuler</VTooltip>
+            </VBtn>
+            <VBtn icon variant="text" color="error" size="small" @click="hapusEkskul(item)">
+              <VIcon icon="tabler-trash" />
+              <VTooltip activator="parent" location="top">Hapus Ekstrakurikuler</VTooltip>
+            </VBtn>
+            <VBtn color="warning" @click="sinkron(item.ekstrakurikuler_id)" size="x-small"
+              :loading="loadingSinkron[item.ekstrakurikuler_id]" :disabled="loadingSinkron[item.ekstrakurikuler_id]">
+              <VIcon start icon="tabler-refresh" />Sinkron Anggta
+            </VBtn>
+          </div>
         </template>
         <!-- pagination -->
         <template #bottom>
@@ -173,6 +224,13 @@ const reFecthAnggota = async () => {
       <!-- SECTION -->
     </VCard>
     <AnggotaRombelDialog v-model:isDialogVisible="showAnggota" v-model:isLoading="isLoading" :dialog-title="dialogTitle"
-      v-model:listData="anggotaRombel" @refresh="reFecthAnggota" />
+      v-model:listData="anggotaRombel" :rombongan-belajar-id="rombonganBelajarId" @refresh="reFecthAnggota" />
+
+    <AddNewEkskul v-model:is-dialog-visible="isAddEkskulVisible" :edit-data="selectedEkskul" @update:is-dialog-visible="(val) => { if(!val) selectedEkskul = null }" @close="onEkskulAdded" />
+    
+    <ConfirmDialog v-model:isDialogVisible="isConfirmDialogVisible" v-model:isNotifVisible="isAlertDialogVisible"
+      confirmation-question="Apakah Anda yakin?" confirmation-text="Tindakan ini tidak dapat dikembalikan!"
+      :confirm-color="notif.color" :confirm-title="notif.title" :confirm-msg="notif.text" @confirm="confirmDelete"
+      @close="confirmClose" />
   </section>
 </template>

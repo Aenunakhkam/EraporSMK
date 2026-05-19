@@ -1,8 +1,8 @@
 {
   "include": [
-    "./vite.config.*",
     "./resources/js/**/*",
     "./resources/js/**/*.vue",
+    "./vite.config.js",
     "./themeConfig.js"
   ],
   "exclude": [
@@ -13,7 +13,7 @@
     "baseUrl": "./",
     "target": "esnext",
     "module": "esnext",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "node",
     "jsx": "preserve",
     "paths": {
       "@/*": [
